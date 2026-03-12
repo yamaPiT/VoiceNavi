@@ -1,0 +1,34 @@
+{
+  "name": "voicenavi",
+  "version": "1.0.0",
+  "description": "本システム（VoiceNavi）は、1990年代に提唱された「画面に依存しない、対話による安全なナビゲーション」というコンセプトを、現代の生成AI（LLM）技術を用いてブラウザ上のデモンストレーションとして具現化するWebアプリケーションである。\r 視覚的な地図表示に頼らず、音声による対話を通じて目的地までのルート案内や周辺情報の提供を行うことを目指す。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules npx jest --no-coverage",
+    "dev": "npx serve ."
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yamaPiT/VoiceNavi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yamaPiT/VoiceNavi/issues"
+  },
+  "homepage": "https://github.com/yamaPiT/VoiceNavi#readme",
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "jest": "^30.3.0"
+  }
+}

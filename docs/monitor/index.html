@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoiceNavi ADA プロセス モニター</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e3a5f;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 背景グリッドアニメーション */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+  /* ヘッダー */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    box-shadow: var(--glow);
+    animation: pulse-logo 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-logo {
+    0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+    50% { box-shadow: 0 0 40px rgba(59,130,246,0.6); }
+  }
+
+  header h1 { font-size: 20px; font-weight: 700; }
+  header p { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+
+  .live-badge {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: var(--green);
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .last-updated { font-size: 11px; color: var(--text-dim); margin-left: 12px; }
+
+  /* ADA フローライン */
+  .ada-flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .flow-step {
+    flex: 1;
+    padding: 20px 16px;
+    text-align: center;
+    position: relative;
+    transition: all 0.4s ease;
+    cursor: default;
+  }
+
+  .flow-step::after {
+    content: '▶';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: var(--border);
+    z-index: 2;
+  }
+
+  .flow-step:last-child::after { display: none; }
+
+  .flow-step.done {
+    background: rgba(16,185,129,0.08);
+  }
+
+  .flow-step.active {
+    background: rgba(59,130,246,0.12);
+    box-shadow: inset 0 0 30px rgba(59,130,246,0.08);
+  }
+
+  .flow-step.pending { opacity: 0.4; }
+
+  .step-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .step-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+
+  .step-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  .flow-step.done .step-label { color: var(--green); }
+  .flow-step.done .step-name { color: var(--green); }
+  .flow-step.active .step-label { color: var(--accent2); }
+  .flow-step.active .step-name { color: var(--accent); }
+
+  .step-status-tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+
+  .flow-step.done .step-status-tag { background: rgba(16,185,129,0.2); color: var(--green); }
+  .flow-step.active .step-status-tag { background: rgba(59,130,246,0.2); color: var(--accent); animation: pulse-tag 1.5s ease-in-out infinite; }
+  .flow-step.pending .step-status-tag { background: rgba(100,116,139,0.2); color: var(--text-dim); }
+
+  @keyframes pulse-tag {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  /* メイングリッド */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+
+  /* カード */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ファイル一覧 */
+  .file-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    font-size: 13px;
+  }
+
+  .file-item.created { border-color: rgba(16,185,129,0.3); animation: slide-in 0.5s ease; }
+  .file-item.modified { border-color: rgba(59,130,246,0.3); }
+  .file-item.pending { opacity: 0.4; }
+
+  @keyframes slide-in {
+    from { transform: translateX(-10px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .file-icon { font-size: 16px; }
+
+  .file-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    flex: 1;
+  }
+
+  .file-size { font-size: 11px; color: var(--text-dim); }
+
+  .file-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .badge-created { background: rgba(16,185,129,0.2); color: var(--green); }
+  .badge-modified { background: rgba(59,130,246,0.2); color: var(--accent); }
+  .badge-pending { background: rgba(100,116,139,0.15); color: var(--text-dim); }
+
+  /* エージェントアクティビティ */
+  .agent-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .agent-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+    font-size: 13px;
+    transition: all 0.4s ease;
+  }
+
+  .agent-item.active { border-left-color: var(--accent); animation: flash-border 2s ease-in-out infinite; }
+  .agent-item.done { border-left-color: var(--green); }
+  .agent-item.waiting { border-left-color: var(--yellow); }
+  .agent-item.standby { opacity: 0.35; }
+
+  @keyframes flash-border {
+    0%, 100% { border-left-color: var(--accent); }
+    50% { border-left-color: var(--accent2); }
+  }
+
+  .agent-avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .agent-item.active .agent-avatar { background: rgba(59,130,246,0.2); }
+  .agent-item.done .agent-avatar { background: rgba(16,185,129,0.2); }
+  .agent-item.waiting .agent-avatar { background: rgba(245,158,11,0.2); }
+  .agent-item.standby .agent-avatar { background: rgba(100,116,139,0.15); }
+
+  .agent-info { flex: 1; }
+  .agent-name { font-weight: 600; font-size: 13px; }
+  .agent-task { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  .agent-status {
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .status-active { background: rgba(59,130,246,0.2); color: var(--accent); }
+  .status-done { background: rgba(16,185,129,0.2); color: var(--green); }
+  .status-waiting { background: rgba(245,158,11,0.2); color: var(--yellow); }
+  .status-standby { background: rgba(100,116,139,0.15); color: var(--text-dim); }
+
+  /* ログ */
+  .log-container {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    height: 220px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .log-container::-webkit-scrollbar { width: 4px; }
+  .log-container::-webkit-scrollbar-track { background: transparent; }
+  .log-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .log-line { display: flex; gap: 10px; line-height: 1.6; }
+  .log-time { color: var(--text-dim); flex-shrink: 0; }
+  .log-level-info { color: var(--accent2); }
+  .log-level-success { color: var(--green); }
+  .log-level-warn { color: var(--yellow); }
+  .log-level-agent { color: var(--purple); }
+  .log-msg { color: var(--text); }
+
+  /* スタッツカード */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label { font-size: 12px; color: var(--text-dim); }
+
+  /* プログレスバー */
+  .progress-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin-top: 20px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  /* スキャンライン */
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ヘッダー -->
+  <header>
+    <div class="logo">🧭</div>
+    <div>
+      <h1>VoiceNavi — ADA プロセス モニター</h1>
+      <p>Agent-Driven Agile / V字モデル リアルタイム監視ダッシュボード</p>
+    </div>
+    <div style="margin-left: auto; text-align: right;">
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        LIVE
+      </div>
+      <div class="last-updated" id="lastUpdated">最終更新: --:--:--</div>
+    </div>
+  </header>
+
+  <!-- ADA フロー -->
+  <div class="ada-flow" id="adaFlow">
+    <div class="flow-step done" id="step-req">
+      <span class="step-icon">📋</span>
+      <div class="step-label">Step 1</div>
+      <div class="step-name">要求定義</div>
+      <span class="step-status-tag">✓ 完了</span>
+    </div>
+    <div class="flow-step active" id="step-arch">
+      <span class="step-icon">🏛️</span>
+      <div class="step-label">Step 2</div>
+      <div class="step-name">アーキテクチャ設計</div>
+      <span class="step-status-tag">⚡ 実行中</span>
+    </div>
+    <div class="flow-step pending" id="step-impl">
+      <span class="step-icon">⚙️</span>
+      <div class="step-label">Step 3</div>
+      <div class="step-name">実装</div>
+      <span class="step-status-tag">待機中</span>
+    </div>
+    <div class="flow-step pending" id="step-test">
+      <span class="step-icon">🧪</span>
+      <div class="step-label">Step 4</div>
+      <div class="step-name">テスト</div>
+      <span class="step-status-tag">待機中</span>
+    </div>
+  </div>
+
+  <!-- スタッツ行 -->
+  <div class="grid-3" style="margin-bottom: 20px;">
+    <div class="stat-card">
+      <div class="stat-value" id="statDocs">2</div>
+      <div class="stat-label">生成ドキュメント数</div>
+      <div class="progress-bar"><div class="progress-fill" id="docProgress" style="width: 40%"></div></div>
+      <div class="progress-label"><span>SW105 → SW205</span><span id="docPct">40%</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statAgents">3</div>
+      <div class="stat-label">稼働エージェント数</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 60%; background: linear-gradient(90deg, #8b5cf6, #06b6d4)"></div></div>
+      <div class="progress-label"><span>6エージェント中</span><span>60%</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statPhase">2/4</div>
+      <div class="stat-label">現在フェーズ</div>
+      <div class="progress-bar"><div class="progress-fill" id="phaseProgress" style="width: 25%; background: linear-gradient(90deg, #f59e0b, #10b981)"></div></div>
+      <div class="progress-label"><span>全体進捗</span><span id="phasePct">25%</span></div>
+    </div>
+  </div>
+
+  <!-- メイングリッド -->
+  <div class="grid">
+
+    <!-- エージェントアクティビティ -->
+    <div class="card">
+      <div class="card-title">🤖 エージェント アクティビティ</div>
+      <div class="agent-list">
+        <div class="agent-item done">
+          <div class="agent-avatar">📝</div>
+          <div class="agent-info">
+            <div class="agent-name">requirements-engineer</div>
+            <div class="agent-task">SW105 要求仕様書を作成</div>
+          </div>
+          <span class="agent-status status-done">完了</span>
+        </div>
+        <div class="agent-item done">
+          <div class="agent-avatar">🔍</div>
+          <div class="agent-info">
+            <div class="agent-name">requirements-reviewer</div>
+            <div class="agent-task">要求仕様書レビュー完了</div>
+          </div>
+          <span class="agent-status status-done">完了</span>
+        </div>
+        <div class="agent-item active" id="agentArchitect">
+          <div class="agent-avatar">🏛️</div>
+          <div class="agent-info">
+            <div class="agent-name">architect</div>
+            <div class="agent-task" id="architectTask">SW205 アーキテクチャ設計書を作成中...</div>
+          </div>
+          <span class="agent-status status-active">実行中</span>
+        </div>
+        <div class="agent-item waiting" id="agentArchReviewer">
+          <div class="agent-avatar">🔬</div>
+          <div class="agent-info">
+            <div class="agent-name">architecture-reviewer</div>
+            <div class="agent-task">architect 完了後にレビュー開始</div>
+          </div>
+          <span class="agent-status status-waiting">待機</span>
+        </div>
+        <div class="agent-item standby">
+          <div class="agent-avatar">💻</div>
+          <div class="agent-info">
+            <div class="agent-name">programmer</div>
+            <div class="agent-task">設計承認後に実装開始</div>
+          </div>
+          <span class="agent-status status-standby">スタンバイ</span>
+        </div>
+        <div class="agent-item standby">
+          <div class="agent-avatar">🧪</div>
+          <div class="agent-info">
+            <div class="agent-name">test-engineer</div>
+            <div class="agent-task">実装完了後にテスト開始</div>
+          </div>
+          <span class="agent-status status-standby">スタンバイ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ドキュメント生成状況 -->
+    <div class="card">
+      <div class="card-title">📄 ドキュメント生成状況</div>
+      <div class="file-list">
+        <div class="file-item created">
+          <span class="file-icon">📋</span>
+          <span class="file-name">SW105_ソフトウェア要求仕様書.md</span>
+          <span class="file-size">24.5 KB</span>
+          <span class="file-badge badge-created">✓ 完了</span>
+        </div>
+        <div class="file-item modified" id="file-sw205">
+          <span class="file-icon">🏛️</span>
+          <span class="file-name">SW205_アーキテクチャ設計書.md</span>
+          <span class="file-size" id="sw205size">14.3 KB</span>
+          <span class="file-badge badge-modified">🔄 作成中</span>
+        </div>
+        <div class="file-item pending" id="file-src">
+          <span class="file-icon">⚙️</span>
+          <span class="file-name">src/ (実装ファイル群)</span>
+          <span class="file-size">—</span>
+          <span class="file-badge badge-pending">待機</span>
+        </div>
+        <div class="file-item pending" id="file-sw401">
+          <span class="file-icon">🧪</span>
+          <span class="file-name">SW401_テスト仕様書_報告書.md</span>
+          <span class="file-size">—</span>
+          <span class="file-badge badge-pending">待機</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ログ -->
+  <div class="card-title" style="margin-bottom: 10px;">🖥️ エージェント ライブログ</div>
+  <div class="log-container" id="logContainer"></div>
+
+</div>
+
+<script>
+  // ログメッセージ配列
+  const logs = [
+    { time: '16:30:00', level: 'success', msg: '[requirements-engineer] SW105 要求仕様書の作成完了 (24,516 bytes)' },
+    { time: '16:30:45', level: 'success', msg: '[requirements-reviewer] ASDoQ レビュー完了。目的適合性: 合格' },
+    { time: '16:31:00', level: 'info',    msg: '[マサ] 要求仕様書を承認。設計・実装・テストを指示。' },
+    { time: '16:31:10', level: 'agent',   msg: '[architect] SW205 アーキテクチャ設計書の作成を開始...' },
+    { time: '16:31:15', level: 'info',    msg: '[architect] ada_document_guidelines.md を参照中...' },
+    { time: '16:31:30', level: 'info',    msg: '[architect] モジュール分割設計: STT / LLM / Maps / Vehicle / UI' },
+    { time: '16:32:00', level: 'info',    msg: '[architect] Mermaid アーキテクチャ図を生成中...' },
+    { time: '16:32:40', level: 'info',    msg: '[architect] データフロー設計（JSON インターフェース定義）を策定中...' },
+    { time: '16:33:10', level: 'agent',   msg: '[architect] SW205 アーキテクチャ設計書ドラフト作成中 (14,290 bytes)...' },
+    { time: '16:33:30', level: 'warn',    msg: '[architect] レビュー待ち: architecture-reviewer へ引き継ぎ準備中' },
+  ];
+
+  const levelClass = {
+    info: 'log-level-info',
+    success: 'log-level-success',
+    warn: 'log-level-warn',
+    agent: 'log-level-agent',
+  };
+
+  const levelLabel = {
+    info: '[INFO]',
+    success: '[DONE]',
+    warn: '[WAIT]',
+    agent: '[AGNT]',
+  };
+
+  const container = document.getElementById('logContainer');
+
+  function addLog(log) {
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.innerHTML = `
+      <span class="log-time">${log.time}</span>
+      <span class="${levelClass[log.level]}">${levelLabel[log.level]}</span>
+      <span class="log-msg">${log.msg}</span>
+    `;
+    container.appendChild(line);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // 順番にログを表示
+  let i = 0;
+  function showNextLog() {
+    if (i < logs.length) {
+      addLog(logs[i]);
+      i++;
+      setTimeout(showNextLog, 500 + Math.random() * 800);
+    } else {
+      // ループして新しいログを追加シミュレーション
+      setTimeout(simulateLiveLog, 3000);
+    }
+  }
+
+  const liveLogs = [
+    { level: 'info',  msg: '[architect] アーキテクチャ決定記録 (ADR) を文書化中...' },
+    { level: 'info',  msg: '[architect] Agentic Architecture 制約（疎結合設計）を反映...' },
+    { level: 'agent', msg: '[architect] SW205 最終化・保存中...' },
+    { level: 'success', msg: '[architect] SW205 アーキテクチャ設計書 作成完了！' },
+    { level: 'agent', msg: '[architecture-reviewer] レビュー開始。ASDoQ 整合性チェック...' },
+    { level: 'info',  msg: '[architecture-reviewer] モジュール分割の妥当性を検証中...' },
+  ];
+
+  let liveIdx = 0;
+  function simulateLiveLog() {
+    if (liveIdx < liveLogs.length) {
+      const now = new Date();
+      const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+      addLog({ ...liveLogs[liveIdx], time: t });
+      liveIdx++;
+
+      // SW205完了タイミングでUIを更新
+      if (liveIdx === 4) {
+        updateToArchReview();
+      }
+
+      setTimeout(simulateLiveLog, 1200 + Math.random() * 1500);
+    }
+  }
+
+  function updateToArchReview() {
+    // ファイルバッジを更新
+    const sw205 = document.getElementById('file-sw205');
+    sw205.classList.remove('modified');
+    sw205.classList.add('created');
+    sw205.querySelector('.file-badge').className = 'file-badge badge-created';
+    sw205.querySelector('.file-badge').textContent = '✓ 完了';
+
+    // エージェントステータス更新
+    document.getElementById('agentArchitect').className = 'agent-item done';
+    document.getElementById('agentArchitect').querySelector('.agent-status').className = 'agent-status status-done';
+    document.getElementById('agentArchitect').querySelector('.agent-status').textContent = '完了';
+    document.getElementById('architectTask').textContent = 'SW205 アーキテクチャ設計書 作成完了';
+
+    document.getElementById('agentArchReviewer').className = 'agent-item active';
+    document.getElementById('agentArchReviewer').querySelector('.agent-status').className = 'agent-status status-active';
+    document.getElementById('agentArchReviewer').querySelector('.agent-status').textContent = '実行中';
+    document.getElementById('statDocs').textContent = '3';
+    document.getElementById('docProgress').style.width = '60%';
+    document.getElementById('docPct').textContent = '60%';
+  }
+
+  // 時刻更新
+  function updateTime() {
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent =
+      `最終更新: ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
+
+  setInterval(updateTime, 1000);
+  updateTime();
+  showNextLog();
+</script>
+</body>
+</html>
