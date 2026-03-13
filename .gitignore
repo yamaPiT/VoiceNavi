@@ -11,3 +11,6 @@
 
 # Antigravity Rules
 use-context7-for-docs.md
+
+# config
+./config.js

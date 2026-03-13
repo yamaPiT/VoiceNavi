@@ -7,13 +7,11 @@
   <title>VoiceNavi - 音声対話型カーナビ デモ</title>
   <meta name="description" content="LLM×音声対話で湘南・鎌倉ドライブをアシストするVoiceNaviのデモアプリ。メンタルマップ形成・車両操作・コンシェルジュ機能を体験できます。" />
 
-  <!-- APIキー注入: Gemini API キーをここにセット -->
+  <!-- APIキー注入: Gemini API キーをセット -->
+  <script src="./config.js"></script>
+
   <script>
-    window.ENV = {
-      GEMINI_API_KEY: "AIzaSyBOM2Mprt_DSTeg3xJ4_hiy6oUNHb-fQ9I",
-      GEMINI_MODEL: "gemini-2.0-flash",
-      GOOGLE_MAPS_API_KEY: "AIzaSyClRJM-G-jrnolmh0IpMOoMvhsPZRJB9Fs",
-    };
+    document.write('<script src="https://maps.googleapis.com/maps/api/js?key=' + window.ENV.GOOGLE_MAPS_API_KEY + '&language=ja"><\/script>');
   </script>
 
   <style>
@@ -412,19 +410,14 @@
     </p>
   </footer>
 
-  <!-- Google Maps JavaScript API -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&language=ja" async defer
-    id="google-maps-script">
-    </script>
-
   <!-- アプリケーション本体（ES Modules） -->
   <script type="module" src="./src/main.js"></script>
 
   <!-- Google Maps APIキーをENVから動的に差し替え -->
   <script>
     // Google Maps のスクリプトタグに動的にAPIキーを設定
-    document.getElementById("google-maps-script").src =
-      `https://maps.googleapis.com/maps/api/js?key=${window.ENV.GOOGLE_MAPS_API_KEY}&language=ja`;
+    //    document.getElementById("google-maps-script").src =
+    //      `https://maps.googleapis.com/maps/api/js?key=${window.ENV.GOOGLE_MAPS_API_KEY}&language=ja`;
   </script>
 
 </body>
