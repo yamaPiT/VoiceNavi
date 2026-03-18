@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceNavi - Interactive Driving Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/assets/index-DOEjK1nu.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BM8CUB3v.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <h1>VoiceNavi</h1>
+      <div class="speed-indicator">
+        <span id="speed-value">0</span>
+        <span class="unit">km/h</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Chat Log Area -->
+      <section class="chat-section">
+        <div id="chat-log" class="chat-log">
+          <div class="message system-msg">
+            <div class="msg-bubble">VoiceNaviシステムが起動しました。デモ開始ボタンを押してください。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map Area -->
+      <section class="map-section">
+        <div id="map" class="map-container"></div>
+      </section>
+
+      <!-- Scenario Suggestions Area -->
+      <section class="scenario-section">
+        <div class="scenario-header">
+          <h3>期待する発話リスト</h3>
+        </div>
+        <div class="scenario-list">
+          <div class="scenario-item">
+            <span class="scenario-text">「ここらへんでオススメの場所ある？」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「あの左に見える海ってなんていう海？」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「マミコ、海が見えてきたね！」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「湘南っぽい音楽かけて！」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「サザンかけて」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「お腹すいちゃったんだよね」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「前のトラック煙たくない？」</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Controls Area -->
+    <footer class="controls-area">
+      <button id="btn-start" class="btn primary">デモ開始</button>
+      <button id="btn-pause" class="btn warning" disabled>中断</button>
+      <button id="btn-resume" class="btn success" disabled>再開</button>
+      <button id="btn-stop" class="btn danger" disabled>デモ終了</button>
+      
+      <!-- Music Indicator -->
+      <div id="music-indicator" class="music-indicator hidden">
+        <span class="music-icon">🎵</span>
+        <span id="music-title">音楽再生中...</span>
+      </div>
+
+      <div class="voice-status">🎙️ <span id="voice-status-text">待機中</span></div>
+    </footer>
+  </div>
+
+</body>
+</html>

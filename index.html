@@ -1,425 +1,87 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VoiceNavi - 音声対話型カーナビ デモ</title>
-  <meta name="description" content="LLM×音声対話で湘南・鎌倉ドライブをアシストするVoiceNaviのデモアプリ。メンタルマップ形成・車両操作・コンシェルジュ機能を体験できます。" />
-
-  <!-- APIキー注入: Gemini API キーをセット -->
-  <script src="./config.js"></script>
-
-  <script>
-    document.write('<script src="https://maps.googleapis.com/maps/api/js?key=' + window.ENV.GOOGLE_MAPS_API_KEY + '&language=ja"><\/script>');
-  </script>
-
-  <style>
-    /* ===================================
-       デザインシステム: カラーパレット・タイポグラフィ
-       =================================== */
-    :root {
-      --color-bg: #0f1117;
-      --color-surface: #1a1d2e;
-      --color-surface-2: #252840;
-      --color-accent: #4f8af7;
-      --color-accent-2: #7c3aed;
-      --color-success: #22c55e;
-      --color-danger: #ef4444;
-      --color-text: #e2e8f0;
-      --color-text-muted: #94a3b8;
-      --color-border: #2d3148;
-      --font-family: 'Inter', 'Noto Sans JP', sans-serif;
-      --radius: 12px;
-      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: var(--color-bg);
-      color: var(--color-text);
-      font-family: var(--font-family);
-      min-height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-    }
-
-    /* ===== ヘッダー ===== */
-    header {
-      background: linear-gradient(90deg, #1a1d2e 0%, #252840 100%);
-      padding: 14px 24px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--color-border);
-    }
-
-    header h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #4f8af7, #7c3aed);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .header-badge {
-      background: rgba(79, 138, 247, 0.15);
-      color: var(--color-accent);
-      border: 1px solid rgba(79, 138, 247, 0.3);
-      border-radius: 20px;
-      padding: 2px 10px;
-      font-size: 0.72rem;
-      letter-spacing: 0.05em;
-    }
-
-    /* ===== メインレイアウト ===== */
-    main {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 0;
-      height: calc(100vh - 120px);
-    }
-
-    /* ===== 地図エリア ===== */
-    #map-container {
-      position: relative;
-      background: #1a1d2e;
-    }
-
-    #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* 車アイコン上の音符アニメーション */
-    #car-icon {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 48px;
-      height: 48px;
-    }
-
-    #music-bubble {
-      display: none;
-      position: absolute;
-      bottom: 76px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(79, 138, 247, 0.9);
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      white-space: nowrap;
-      backdrop-filter: blur(8px);
-      animation: fadeIn 0.3s ease;
-    }
-
-    /* 音符アニメーション: .playing クラスが付与されると音符が揺れる */
-    @keyframes noteFloat {
-      0% {
-        transform: translate(0, 0) rotate(-10deg) scale(1);
-        opacity: 1;
-      }
-
-      50% {
-        transform: translate(4px, -8px) rotate(8deg) scale(1.1);
-        opacity: 0.8;
-      }
-
-      100% {
-        transform: translate(-2px, -14px) rotate(-5deg) scale(0.9);
-        opacity: 0;
-      }
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(4px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-      }
-    }
-
-    .car-icon-img {
-      width: 100%;
-      height: 100%;
-    }
-
-    .note {
-      display: none;
-      position: absolute;
-      top: -10px;
-      font-size: 1.1rem;
-      color: #4f8af7;
-    }
-
-    #car-icon.playing .note {
-      display: block;
-      animation: noteFloat 1.4s infinite ease-in-out;
-    }
-
-    #car-icon.playing .note:nth-child(2) {
-      left: 8px;
-      animation-delay: 0.4s;
-    }
-
-    #car-icon.playing .note:nth-child(3) {
-      left: 26px;
-      animation-delay: 0.8s;
-    }
-
-    /* ガード通知 */
-    #guard-notification {
-      display: none;
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(239, 68, 68, 0.9);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: var(--radius);
-      font-size: 0.9rem;
-      max-width: 90%;
-      text-align: center;
-      backdrop-filter: blur(8px);
-      z-index: 100;
-    }
-
-    /* ===== サイドパネル ===== */
-    #side-panel {
-      background: var(--color-surface);
-      border-left: 1px solid var(--color-border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    /* 車両状態パネル */
-    #vehicle-panel {
-      padding: 16px;
-      border-bottom: 1px solid var(--color-border);
-      background: var(--color-surface-2);
-    }
-
-    #vehicle-panel h2 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--color-text-muted);
-      margin-bottom: 12px;
-    }
-
-    .vehicle-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .stat-card {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
-      padding: 10px;
-      text-align: center;
-    }
-
-    .stat-card__label {
-      font-size: 0.65rem;
-      color: var(--color-text-muted);
-      margin-bottom: 4px;
-    }
-
-    .stat-card__value {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--color-accent);
-    }
-
-    /* 音楽停止ボタン */
-    #stop-music-btn {
-      display: block;
-      width: 100%;
-      margin-top: 12px;
-      padding: 8px;
-      background: rgba(79, 138, 247, 0.1);
-      border: 1px solid rgba(79, 138, 247, 0.3);
-      color: var(--color-accent);
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.8rem;
-      transition: background 0.2s;
-    }
-
-    #stop-music-btn:hover {
-      background: rgba(79, 138, 247, 0.25);
-    }
-
-    /* チャットログ */
-    #chat-log {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chat-msg {
-      max-width: 92%;
-      padding: 10px 14px;
-      border-radius: var(--radius);
-      font-size: 0.88rem;
-      line-height: 1.6;
-      animation: fadeIn 0.25s ease;
-    }
-
-    .chat-msg--user {
-      align-self: flex-end;
-      background: linear-gradient(135deg, #4f8af7, #7c3aed);
-      color: #fff;
-    }
-
-    .chat-msg--assistant {
-      align-self: flex-start;
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-    }
-
-    .chat-msg--guard {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-    }
-
-    /* ===== フッター: マイクボタン ===== */
-    footer {
-      background: var(--color-surface);
-      border-top: 1px solid var(--color-border);
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    #mic-btn {
-      font-size: 1rem;
-      font-weight: 600;
-      padding: 14px 32px;
-      border: none;
-      border-radius: 50px;
-      background: linear-gradient(135deg, #4f8af7, #7c3aed);
-      color: #fff;
-      cursor: pointer;
-      transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 0 20px rgba(79, 138, 247, 0.4);
-    }
-
-    #mic-btn:hover {
-      transform: scale(1.04);
-      box-shadow: 0 0 28px rgba(79, 138, 247, 0.6);
-    }
-
-    #mic-btn:disabled {
-      opacity: 0.5;
-      transform: none;
-      cursor: default;
-    }
-
-    .footer-hint {
-      font-size: 0.78rem;
-      color: var(--color-text-muted);
-      line-height: 1.5;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceNavi - Interactive Driving Demo</title>
+  <link rel="stylesheet" href="./style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
-
-  <!-- ヘッダー -->
-  <header>
-    <h1>🗺 VoiceNavi</h1>
-    <span class="header-badge">デモ: 鎌倉→七里ヶ浜 4.87km</span>
-    <span class="header-badge" style="margin-left:auto">ショウヘイ & マミコ</span>
-  </header>
-
-  <main>
-    <!-- 地図エリア -->
-    <div id="map-container">
-      <div id="map"></div>
-
-      <!-- 車アイコン（音符アニメーション付き） -->
-      <div id="car-icon" aria-label="自車位置">
-        <span class="note" aria-hidden="true">♪</span>
-        <span class="note" aria-hidden="true">♫</span>
-        <span class="note" aria-hidden="true">♪</span>
-        🚗
+  <div id="app" class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <h1>VoiceNavi</h1>
+      <div class="speed-indicator">
+        <span id="speed-value">0</span>
+        <span class="unit">km/h</span>
       </div>
+    </header>
 
-      <!-- 曲名吹き出し -->
-      <div id="music-bubble" role="status" aria-live="polite"></div>
-
-      <!-- ガードレール通知 -->
-      <div id="guard-notification" role="alert"></div>
-    </div>
-
-    <!-- サイドパネル -->
-    <aside id="side-panel">
-      <!-- 車両状態 -->
-      <div id="vehicle-panel">
-        <h2>🚗 車両状態（擬似）</h2>
-        <div class="vehicle-stats">
-          <div class="stat-card">
-            <div class="stat-card__label">エアコン</div>
-            <div class="stat-card__value" id="vehicle-temp">25℃</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">窓</div>
-            <div class="stat-card__value" id="vehicle-window">開</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">換気</div>
-            <div class="stat-card__value" id="vehicle-vent">外気導入</div>
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Chat Log Area -->
+      <section class="chat-section">
+        <div id="chat-log" class="chat-log">
+          <div class="message system-msg">
+            <div class="msg-bubble">VoiceNaviシステムが起動しました。デモ開始ボタンを押してください。</div>
           </div>
         </div>
-        <button id="stop-music-btn" aria-label="音楽アニメーションを停止">⏹ 音楽を止める</button>
+      </section>
+
+      <!-- Map Area -->
+      <section class="map-section">
+        <div id="map" class="map-container"></div>
+      </section>
+
+      <!-- Scenario Suggestions Area -->
+      <section class="scenario-section">
+        <div class="scenario-header">
+          <h3>期待する発話リスト</h3>
+        </div>
+        <div class="scenario-list">
+          <div class="scenario-item">
+            <span class="scenario-text">「ここらへんでオススメの場所ある？」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「あの左に見える海ってなんていう海？」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「マミコ、海が見えてきたね！」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「湘南っぽい音楽かけて！」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「サザンかけて」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「お腹すいちゃったんだよね」</span>
+          </div>
+          <div class="scenario-item">
+            <span class="scenario-text">「前のトラック煙たくない？」</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Controls Area -->
+    <footer class="controls-area">
+      <button id="btn-start" class="btn primary">デモ開始</button>
+      <button id="btn-pause" class="btn warning" disabled>中断</button>
+      <button id="btn-resume" class="btn success" disabled>再開</button>
+      <button id="btn-stop" class="btn danger" disabled>デモ終了</button>
+      
+      <!-- Music Indicator -->
+      <div id="music-indicator" class="music-indicator hidden">
+        <span class="music-icon">🎵</span>
+        <span id="music-title">音楽再生中...</span>
       </div>
 
-      <!-- チャットログ -->
-      <div id="chat-log" role="log" aria-label="会話ログ" aria-live="polite"></div>
-    </aside>
-  </main>
+      <div class="voice-status">🎙️ <span id="voice-status-text">待機中</span></div>
+    </footer>
+  </div>
 
-  <!-- フッター -->
-  <footer>
-    <button id="mic-btn" aria-label="マイクを開始して話しかける">🎤 話しかける</button>
-    <p class="footer-hint">
-      ボタンを押して話しかけてください。<br>
-      「案内して」「暑いな」「サザン好きだよ」など何でも
-    </p>
-  </footer>
-
-  <!-- アプリケーション本体（ES Modules） -->
   <script type="module" src="./src/main.js"></script>
-
-  <!-- Google Maps APIキーをENVから動的に差し替え -->
-  <script>
-    // Google Maps のスクリプトタグに動的にAPIキーを設定
-    //    document.getElementById("google-maps-script").src =
-    //      `https://maps.googleapis.com/maps/api/js?key=${window.ENV.GOOGLE_MAPS_API_KEY}&language=ja`;
-  </script>
-
 </body>
-
 </html>
