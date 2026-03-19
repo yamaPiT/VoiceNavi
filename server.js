@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import fetch from 'node-fetch'; // 必要な場合は使うが、Node 18+なら標準fetchが使える
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 dotenv.config();
 
@@ -68,34 +68,27 @@ app.post('/api/chat', async (req, res) => {
       parts: [{ text: promptMessage }]
     });
 
-    const requestBody = {
-      contents: contents,
+    console.log("[DEBUG Server] Request contents to Gemini:", JSON.stringify(contents, null, 2));
+
+    // 公式SDKによるGemini API呼び出し
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
       generationConfig: {
         temperature: 0.7,
         responseMimeType: "application/json"
       }
-    };
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
     });
 
-    if (!response.ok) {
-      console.error(`[Gemini API Status Error] ${response.status} ${response.statusText}`);
-      const text = await response.text();
-      console.error(`[Gemini Response Body]`, text);
-      return res.status(response.status).json({ error: `Gemini API Error: ${response.status}` });
-    }
+    const result = await model.generateContent({ contents });
+    const response = result.response;
+    const rawText = response.text();
+    console.log("[DEBUG Server] Gemini Raw Response TEXT:", rawText);
 
-    const data = await response.json();
-    if (!data.candidates || data.candidates.length === 0) {
-      console.error("[Gemini API Error] No response candidates");
+    if (!rawText) {
+      console.error("[Gemini API Error] Empty response");
       return res.status(500).json({ error: "No response from Gemini API" });
     }
-
-    const rawText = data.candidates[0].content.parts[0].text;
     
     // JSON Parse
     let parsed = null;
@@ -104,7 +97,7 @@ app.post('/api/chat', async (req, res) => {
       if (jsonMatch) {
          parsed = JSON.parse(jsonMatch[0]);
       } else {
-         throw new Error("No JSON mapped");
+         throw new Error("No JSON found in response");
       }
     } catch(err) {
       console.error("[JSON Parse Error] Raw text:", rawText);
@@ -115,7 +108,9 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (error) {
     console.error("[/api/chat Exception]", error);
-    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    // SDKの429エラーはステータスコードをそのままクライアントに転送する
+    const statusCode = error.status || 500;
+    res.status(statusCode).json({ error: error.message || 'Internal Server Error' });
   }
 });
 
@@ -137,7 +132,7 @@ app.post('/api/tts', async (req, res) => {
 
     const requestBody = {
       input: { text: text },
-      voice: { languageCode: 'ja-JP', name: 'ja-JP-Neural2-F' },
+      voice: { languageCode: 'ja-JP', name: 'ja-JP-Neural2-B' },
       audioConfig: { audioEncoding: 'MP3' }
     };
 

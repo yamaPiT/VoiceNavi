@@ -39,6 +39,8 @@ export class LLMAgent {
           systemPrompt: this.systemPrompt
         };
 
+        console.log("[DEBUG LLMAgent] Request Body sent to BFF:", bffRequestBody);
+
         const response = await fetch('http://localhost:3000/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -49,10 +51,13 @@ export class LLMAgent {
 
         if (!response.ok) {
           const errText = await response.text();
-          throw new Error(`BFF Server Error: ${response.status} ${errText}`);
+          const error = new Error(`BFF Server Error: ${response.status} ${errText}`);
+          error.status = response.status;
+          throw error;
         }
 
         const parsed = await response.json();
+        console.log("[DEBUG LLMAgent] BFF Raw Response parsed:", parsed);
 
         // 相手が文字列として返した場合の防御
         if (typeof parsed !== 'object') {
@@ -68,7 +73,14 @@ export class LLMAgent {
       } catch (error) {
         clearTimeout(delayTimer);
         console.error(`LLM Error (Try ${retries + 1}):`, error);
-        retries++;
+
+        // 429 Too Many Requests の場合はリトライ回数を最大値にしてループを抜ける
+        if (error.status === 429) {
+          console.warn("429 Error detected. Stopping retries to save quota.");
+          retries = maxRetries + 1;
+        } else {
+          retries++;
+        }
 
         if (retries > maxRetries) {
           console.error("LLM Max retries exceeded. Invoking fallback.");
