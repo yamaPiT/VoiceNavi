@@ -23,6 +23,8 @@ class Application {
     this.isDemoActive = false;
     this.isListeningWait = false; 
     this.isArrivalAnnounced = false; 
+    this.lastInteractionTime = Date.now();
+    this.lastResponseText = "";
 
     // 初回ロード
     this.init();
@@ -143,8 +145,32 @@ class Application {
     if (data.isFinished && !this.isArrivalAnnounced) {
       this.isArrivalAnnounced = true;
       this.ui.updateSpeed(0);
-      this.handleUserUtterance("目的地に到着しました。到着の案内をお願いします。");
+      // 到着時は自律的な介入（割り込み）として処理
+      this.triggerAutonomousGuidance("目的地に到着しました。到着の案内をお願いします。");
     }
+
+    // 自律発話（無言時のガイド）: 30秒ごとにトリガー
+    if (this.isDemoActive && !this.isListeningWait && !this.voiceModule.isPlaying) {
+      const now = Date.now();
+      if (now - this.lastInteractionTime > 30000) {
+        console.log("[DEBUG] Autonomous speech triggered.");
+        this.triggerAutonomousGuidance();
+      }
+    }
+  }
+
+  async triggerAutonomousGuidance(customText = "") {
+    this.lastInteractionTime = Date.now();
+    
+    // 強制的にリスニングを中断して処理へ回す（自らの発話を拾わないようにする）
+    if (this.voiceModule.recognition && this.isListeningWait) {
+       this.voiceModule.recognition.stop();
+    }
+    this.isListeningWait = true;
+    this.ui.updateVoiceStatus('idle');
+
+    // customTextがあればそれを使う（到着時など）、なければ空（自律ガイド）
+    await this.handleUserUtterance(customText, true);
   }
 
   // --- 音声と対話の処理ループ ---
@@ -190,11 +216,11 @@ class Application {
     await this.handleUserUtterance(text);
   }
 
-  async handleUserUtterance(text) {
+  async handleUserUtterance(text, isAutonomous = false) {
     // 応答遅延時（5秒）のフォールバック用コールバック
     const onDelay = () => {
       this.ui.addChatMessage('ai', '（考え中...）');
-      this.voiceModule.speak('ええと、少し待ってね。');
+      // フィラー音声「ちょっとまってね」は削除（Masa要求）
     };
 
     try {
@@ -218,13 +244,37 @@ class Application {
       }
 
       // 意図抽出・応答生成
-      const responseJSON = await this.llmAgent.processInput(text, currentContext, onDelay);
+      let contextPrefix = isAutonomous ? "【自律発話のタイミング】" : "";
+      
+      // 音楽再生の自律的ルール（Masa要求）
+      if (isAutonomous) {
+         if (progressRatio < 0.75) {
+            contextPrefix += "（現在は稲村ヶ崎の通過前です。もし自律的に音楽を流すならサザン以外の湘南に合う曲にしてください）";
+         } else {
+            contextPrefix += "（現在は稲村ヶ崎を通過中または通過後です。自律的にサザンの曲を解禁します）";
+         }
+      }
+
+      const responseJSON = await this.llmAgent.processInput(contextPrefix + text, currentContext, onDelay);
 
       if (!responseJSON) {
         this.ui.updateVoiceStatus('idle');
+        this.isListeningWait = false;
         this.continuousListenLoop();
         return;
       }
+
+      // 重複発話のチェック（自律発話時のみスキップ判定）
+      const cleanText = responseJSON.reply_text.trim();
+      if (isAutonomous && cleanText === this.lastResponseText) {
+        console.log("[DEBUG] Skipping duplicate autonomous speech:", cleanText);
+        this.ui.updateVoiceStatus('idle');
+        this.isListeningWait = false; 
+        this.continuousListenLoop();
+        return;
+      }
+      this.lastResponseText = cleanText;
+      this.lastInteractionTime = Date.now();
 
       // 画面表示用にSSMLタグを除去
       const displayPlainText = responseJSON.reply_text.replace(/<[^>]+>/g, '');
@@ -237,7 +287,8 @@ class Application {
 
       // 車両アクション等のUI処理
       if (responseJSON.action === 'play_music') {
-        this.ui.showMusicIndicator("サザンオールスターズ - 勝手にシンドバッド");
+        const musicTitle = responseJSON.music_title || "サザンオールスターズ - 勝手にシンドバッド";
+        this.ui.showMusicIndicator(musicTitle);
       } else if (responseJSON.action === 'circulation_mode') {
         this.ui.addChatMessage('system', '【車両制御】内気循環モードに変更しました');
       }
@@ -253,7 +304,10 @@ class Application {
         () => { this.ui.updateVoiceStatus('speaking'); },
         () => { 
           this.ui.updateVoiceStatus('idle');
-          if(this.isDemoActive) setTimeout(() => this.continuousListenLoop(), 500);
+          if(this.isDemoActive) {
+            this.isListeningWait = false;
+            setTimeout(() => this.continuousListenLoop(), 500);
+          }
         }
       );
 
@@ -261,7 +315,10 @@ class Application {
       console.error(err);
       this.ui.addChatMessage('system', '対話処理中にエラーが発生しました。');
       this.ui.updateVoiceStatus('idle');
-      if(this.isDemoActive) setTimeout(() => this.continuousListenLoop(), 1000);
+      if(this.isDemoActive) {
+        this.isListeningWait = false;
+        setTimeout(() => this.continuousListenLoop(), 1000);
+      }
     }
   }
 }

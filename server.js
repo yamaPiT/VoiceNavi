@@ -171,4 +171,10 @@ app.post('/api/tts', async (req, res) => {
 // ==========================================
 app.listen(PORT, () => {
   console.log(`BFF Server is running on http://localhost:${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[CRITICAL] Port ${PORT} is already in use. Please kill the process using this port.`);
+  } else {
+    console.error('[CRITICAL] Server failed to start:', err);
+  }
 });
