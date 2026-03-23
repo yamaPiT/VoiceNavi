@@ -112,7 +112,9 @@ export class VoiceInteractionModule {
    */
   _fallbackSpeak(text, onStart, onEnd) {
     return new Promise((resolve) => {
-      const utterance = new SpeechSynthesisUtterance(text);
+      // フォールバック時はSSMLタグをプレーンテキストにするため削除
+      const plainText = text.replace(/<[^>]+>/g, '');
+      const utterance = new SpeechSynthesisUtterance(plainText);
       utterance.lang = 'ja-JP';
       
       utterance.onstart = () => {

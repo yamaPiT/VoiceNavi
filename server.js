@@ -68,12 +68,13 @@ app.post('/api/chat', async (req, res) => {
       parts: [{ text: promptMessage }]
     });
 
+    const modelName = process.env.VITE_GEMINI_MODEL || "gemini-3.1-flash-lite";
+    console.log(`[DEBUG Server] Using model: ${modelName}`);
     console.log("[DEBUG Server] Request contents to Gemini:", JSON.stringify(contents, null, 2));
 
-    // 公式SDKによるGemini API呼び出し
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: modelName,
       generationConfig: {
         temperature: 0.7,
         responseMimeType: "application/json"
@@ -130,8 +131,15 @@ app.post('/api/tts', async (req, res) => {
       return res.status(500).json({ error: 'Server configuration error (API Key)' });
     }
 
+    const isSSML = text.trim().startsWith('<speak>');
+    let finalSSML = text;
+    if(isSSML) {
+       // 頭切れ（再生開始遅延）対策として300msの無音時間を先頭に強制挿入する
+       finalSSML = text.replace(/<speak>/i, '<speak><break time="300ms"/>');
+    }
+
     const requestBody = {
-      input: { text: text },
+      input: isSSML ? { ssml: finalSSML } : { text: text },
       voice: { languageCode: 'ja-JP', name: 'ja-JP-Neural2-B' },
       audioConfig: { audioEncoding: 'MP3' }
     };

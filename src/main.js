@@ -22,6 +22,7 @@ class Application {
 
     this.isDemoActive = false;
     this.isListeningWait = false; 
+    this.isArrivalAnnounced = false; 
 
     // 初回ロード
     this.init();
@@ -68,15 +69,11 @@ class Application {
     this.ui.btnResume.addEventListener('click', () => this.resumeDemo());
     this.ui.btnStop.addEventListener('click', () => this.stopDemo());
 
-    // シナリオリストのクリックイベント
+    // シナリオリストのクリックイベント（Phase 3より参考用とし、クリック無効化）
+    /*
     const scenarioItems = document.querySelectorAll('.scenario-item');
-    scenarioItems.forEach(item => {
-      item.addEventListener('click', () => {
-        if (!this.isDemoActive || this.isListeningWait) return;
-        const text = item.querySelector('.scenario-text').textContent.replace(/[「」]/g, '');
-        this.triggerManualUtterance(text);
-      });
-    });
+    ...
+    */
   }
 
   // --- デモの制御 ---
@@ -85,6 +82,7 @@ class Application {
     this.ui.updateButtonStates('running');
     this.ui.addChatMessage('system', 'デモを開始しました。マイクへのアクセスを許可し、話しかけてください。');
     this.isDemoActive = true;
+    this.isArrivalAnnounced = false; 
     this.continuousListenLoop(); // 音声認識ループ開始
   }
 
@@ -142,10 +140,10 @@ class Application {
        this.mapModule.updateCarPosition(data.position, nextPos);
     }
     
-    if (data.isFinished) {
+    if (data.isFinished && !this.isArrivalAnnounced) {
+      this.isArrivalAnnounced = true;
       this.ui.updateSpeed(0);
-      this.stopDemo();
-      this.ui.addChatMessage('system', '目的地に到着しました。');
+      this.handleUserUtterance("目的地に到着しました。到着の案内をお願いします。");
     }
   }
 
@@ -179,7 +177,7 @@ class Application {
 
   // --- マニュアル（クリックによる）発話トリガー ---
   async triggerManualUtterance(text) {
-    if (!this.isDemoActive || this.isListeningWait) return;
+    if (!this.isDemoActive) return; // 割り込み優先
     
     // 強制的にリスニングを中断して処理へ回す
     if (this.voiceModule.recognition && this.isListeningWait) {
@@ -212,7 +210,12 @@ class Application {
         Math.floor(progressRatio * ROUTE_CONTEXT.length),
         ROUTE_CONTEXT.length - 1
       );
-      const currentContext = ROUTE_CONTEXT[contextIndex] || "ドライブ中";
+      let currentContext = ROUTE_CONTEXT[contextIndex] || "ドライブ中";
+      
+      // シミュレーションエンジンが算出するリアルタイムの相対位置（前後左右）情報を動的に付与
+      if (this.isDemoActive) {
+         currentContext += this.simulation.getRelativeLandmarks(LANDMARKS);
+      }
 
       // 意図抽出・応答生成
       const responseJSON = await this.llmAgent.processInput(text, currentContext, onDelay);
@@ -223,7 +226,9 @@ class Application {
         return;
       }
 
-      this.ui.addChatMessage('ai', responseJSON.reply_text);
+      // 画面表示用にSSMLタグを除去
+      const displayPlainText = responseJSON.reply_text.replace(/<[^>]+>/g, '');
+      this.ui.addChatMessage('ai', displayPlainText);
 
       // ランドマーク点滅処理
       if (responseJSON.target_landmark_id && responseJSON.target_landmark_id !== 'none') {
@@ -232,7 +237,7 @@ class Application {
 
       // 車両アクション等のUI処理
       if (responseJSON.action === 'play_music') {
-        this.ui.showMusicIndicator("サザンオールスターズの曲");
+        this.ui.showMusicIndicator("サザンオールスターズ - 勝手にシンドバッド");
       } else if (responseJSON.action === 'circulation_mode') {
         this.ui.addChatMessage('system', '【車両制御】内気循環モードに変更しました');
       }

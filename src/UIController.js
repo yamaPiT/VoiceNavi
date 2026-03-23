@@ -108,13 +108,13 @@ export class UIController {
       clearTimeout(this.musicTimer);
     }
     
-    this.musicTitleEl.textContent = title || "音楽再生中...";
+    this.musicTitleEl.textContent = title || "サザンオールスターズ - 勝手にシンドバッド";
     this.musicIndicatorEl.classList.remove('hidden');
 
-    // 5秒後に自動非表示
+    // デモ用として長めに表示（30秒）
     this.musicTimer = setTimeout(() => {
       this.hideMusicIndicator();
-    }, 5000);
+    }, 30000);
   }
 
   /**
