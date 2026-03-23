@@ -73,12 +73,19 @@ app.post('/api/chat', async (req, res) => {
     console.log("[DEBUG Server] Request contents to Gemini:", JSON.stringify(contents, null, 2));
 
     const genAI = new GoogleGenerativeAI(API_KEY);
+    const generationConfig = {
+      temperature: 0.7,
+    };
+
+    // Gemmaモデルは現在 JSON mode (responseMimeType) をサポートしていないため、
+    // geminiを含むモデルの場合のみ設定を有効化する
+    if (modelName.toLowerCase().includes("gemini")) {
+      generationConfig.responseMimeType = "application/json";
+    }
+
     const model = genAI.getGenerativeModel({
       model: modelName,
-      generationConfig: {
-        temperature: 0.7,
-        responseMimeType: "application/json"
-      }
+      generationConfig
     });
 
     const result = await model.generateContent({ contents });
