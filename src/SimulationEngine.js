@@ -179,25 +179,28 @@ export class SimulationEngine {
   }
 
   /**
-   * 現在位置と進行方向を元に、指定されたランドマーク群が前後左右のどこにあるか相対位置を判定する
-   * @param {Array} landmarks {name, position: {lat, lng}}の配列
-   * @returns {string} 各ランドマークの相対位置を表すテキスト
+   * 現在位置と進行方向を元に、周辺情報をLLM向きのテキストで生成する
+   * @param {Array} landmarks 
+   * @returns {string} 
    */
   getRelativeLandmarks(landmarks) {
     if (!this.currentPos || landmarks.length === 0) return "";
     
-    let description = [];
+    let visibleItems = [];
+    let approachingItems = [];
+    let environmentInfo = "";
+
+    // 環境情報の付与（134号線走行中かつ西向きなら左手は必ず海）
+    if (this.heading > 180 && this.heading < 300) {
+       environmentInfo = "。現在、車の左側の車窓には「相模湾（海）」が広がっています。夕日が綺麗です。";
+    }
 
     for (const lm of landmarks) {
       const targetPos = lm.position;
-      
       const distance = this._calculateDistance(this.currentPos, targetPos);
-      if (distance > 3000) continue; // 3km以上離れていれば言及しない
+      if (distance > 2000) continue; // 2km以上先は無視
 
-      // ランドマークへの方位角
       const bearing = this._calculateHeading(this.currentPos, targetPos);
-      
-      // 自車進行方向に対する相対角度 (-180 から +180 換算等のため)
       let relativeAngle = (bearing - this.heading + 360) % 360;
       
       let directionStr = "周辺";
@@ -213,11 +216,21 @@ export class SimulationEngine {
         directionStr = "左手";
       }
       
-      const prefix = distance > 250 ? "【距離250m以上】" : "";
-      const passSuffix = isPassed ? "【通過済み】" : "【これから通過】";
-      description.push(`${prefix}${passSuffix}車の${directionStr}に「${lm.name}」`);
+      const distStr = `${Math.round(distance)}m`;
+      if (distance <= 250) {
+        visibleItems.push(`【可視(視程内)】${directionStr}${distStr}に「${lm.name}」`);
+      } else if (!isPassed) {
+        approachingItems.push(`【接近中】${directionStr}${distStr}先に「${lm.name}」`);
+      } else {
+        visibleItems.push(`【通過済み】${directionStr}${distStr}後方に「${lm.name}」`);
+      }
     }
     
-    return description.length > 0 ? " 【現在地の相対状況】: " + description.join('、') + "が見える位置。" : "";
+    let contextStr = " 【リアルタイム周辺状況】: ";
+    if (visibleItems.length > 0) contextStr += "視程内(250m以内)で見えるもの: " + visibleItems.join('、') + "。";
+    if (approachingItems.length > 0) contextStr += "これから近づくもの: " + approachingItems.join('、') + "。";
+    contextStr += environmentInfo;
+
+    return contextStr;
   }
 }

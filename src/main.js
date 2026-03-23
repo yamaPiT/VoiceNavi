@@ -23,6 +23,7 @@ class Application {
     this.isDemoActive = false;
     this.isListeningWait = false; 
     this.isArrivalAnnounced = false; 
+    this.isAutonomousEnabled = true; // デフォルトON
     this.lastInteractionTime = Date.now();
     this.lastResponseText = "";
 
@@ -70,6 +71,10 @@ class Application {
     this.ui.btnPause.addEventListener('click', () => this.pauseDemo());
     this.ui.btnResume.addEventListener('click', () => this.resumeDemo());
     this.ui.btnStop.addEventListener('click', () => this.stopDemo());
+    this.ui.btnToggleAuto.addEventListener('click', () => {
+       this.isAutonomousEnabled = !this.isAutonomousEnabled;
+       this.ui.updateAutoToggle(this.isAutonomousEnabled);
+    });
 
     // シナリオリストのクリックイベント（Phase 3より参考用とし、クリック無効化）
     /*
@@ -85,6 +90,7 @@ class Application {
     this.ui.addChatMessage('system', 'デモを開始しました。マイクへのアクセスを許可し、話しかけてください。');
     this.isDemoActive = true;
     this.isArrivalAnnounced = false; 
+    this.ui.updateAutoToggle(this.isAutonomousEnabled); // UI初期化
     this.continuousListenLoop(); // 音声認識ループ開始
   }
 
@@ -149,10 +155,15 @@ class Application {
       this.triggerAutonomousGuidance("目的地に到着しました。到着の案内をお願いします。");
     }
 
-    // 自律発話（無言時のガイド）: 30秒ごとにトリガー
-    if (this.isDemoActive && !this.isListeningWait && !this.voiceModule.isPlaying) {
+    // 自律発話（無言時のガイド）: 60秒ごとにトリガー（クォータ節約のため30sから延長）
+    if (this.isDemoActive && this.isAutonomousEnabled && !this.isListeningWait && !this.voiceModule.isPlaying) {
       const now = Date.now();
-      if (now - this.lastInteractionTime > 30000) {
+      if (now - this.lastInteractionTime > 60000) {
+        // 音楽再生中の場合は、音楽提案を含む自律発話をスキップする
+        if (this.ui.isMusicPlaying) {
+           console.log("[DEBUG] Music is playing. Skipping autonomous guidance trigger.");
+           return;
+        }
         console.log("[DEBUG] Autonomous speech triggered.");
         this.triggerAutonomousGuidance();
       }
@@ -241,6 +252,7 @@ class Application {
       // シミュレーションエンジンが算出するリアルタイムの相対位置（前後左右）情報を動的に付与
       if (this.isDemoActive) {
          currentContext += this.simulation.getRelativeLandmarks(LANDMARKS);
+         currentContext += ` 【走行状態】: 現在${this.ui.isMusicPlaying ? '音楽を再生中' : '音楽は流れていない'}。`;
       }
 
       // 意図抽出・応答生成

@@ -12,7 +12,7 @@ export class UIController {
     this.voiceStatusTextEl = document.getElementById('voice-status-text');
     this.voiceStatusEl = document.querySelector('.voice-status');
     
-    // Music Indicator
+    this.btnToggleAuto = document.getElementById('btn-toggle-auto');
     this.musicIndicatorEl = document.getElementById('music-indicator');
     this.musicTitleEl = document.getElementById('music-title');
     this.musicTimer = null;
@@ -122,5 +122,22 @@ export class UIController {
    */
   hideMusicIndicator() {
     this.musicIndicatorEl.classList.add('hidden');
+  }
+
+  /**
+   * 自律発話ボタンの表示を更新する
+   */
+  updateAutoToggle(isEnabled) {
+    if (isEnabled) {
+      this.btnToggleAuto.textContent = '自律発話: ON';
+      this.btnToggleAuto.classList.add('active');
+    } else {
+      this.btnToggleAuto.textContent = '自律発話: OFF';
+      this.btnToggleAuto.classList.remove('active');
+    }
+  }
+
+  get isMusicPlaying() {
+    return !this.musicIndicatorEl.classList.contains('hidden');
   }
 }

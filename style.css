@@ -334,6 +334,18 @@ body {
   background: linear-gradient(135deg, #ef4444, #dc2626);
 }
 
+.btn.secondary {
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--text-secondary);
+}
+
+.btn.secondary.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+}
+
 .voice-status {
   margin-left: auto;
   display: flex;
