@@ -125,15 +125,30 @@ export class UIController {
   }
 
   /**
-   * 自律発話ボタンの表示を更新する
+   * 自律発話トグルスイッチの表示を更新する
    */
   updateAutoToggle(isEnabled) {
-    if (isEnabled) {
-      this.btnToggleAuto.textContent = '自律発話: ON';
-      this.btnToggleAuto.classList.add('active');
-    } else {
-      this.btnToggleAuto.textContent = '自律発話: OFF';
-      this.btnToggleAuto.classList.remove('active');
+    if (!this.btnToggleAuto) return;
+    
+    // チェックボックス自体の状態更新
+    if (this.btnToggleAuto.type === 'checkbox') {
+      this.btnToggleAuto.checked = isEnabled;
+    }
+
+    // ラベルの視覚効果を更新
+    const lblOff = document.getElementById('toggle-status-off');
+    const lblOn = document.getElementById('toggle-status-on');
+    
+    if (lblOff && lblOn) {
+      if (isEnabled) {
+        lblOn.classList.add('on');
+        lblOff.classList.remove('off');
+        lblOff.style.color = "var(--text-secondary)";
+      } else {
+        lblOn.classList.remove('on');
+        lblOff.classList.add('off'); // 強調色適用
+        lblOff.style.color = "var(--text-primary)";
+      }
     }
   }
 

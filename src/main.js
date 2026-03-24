@@ -71,8 +71,8 @@ class Application {
     this.ui.btnPause.addEventListener('click', () => this.pauseDemo());
     this.ui.btnResume.addEventListener('click', () => this.resumeDemo());
     this.ui.btnStop.addEventListener('click', () => this.stopDemo());
-    this.ui.btnToggleAuto.addEventListener('click', () => {
-       this.isAutonomousEnabled = !this.isAutonomousEnabled;
+    this.ui.btnToggleAuto.addEventListener('change', (e) => {
+       this.isAutonomousEnabled = e.target.checked;
        this.ui.updateAutoToggle(this.isAutonomousEnabled);
     });
 

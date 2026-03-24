@@ -190,9 +190,16 @@ export class SimulationEngine {
     let approachingItems = [];
     let environmentInfo = "";
 
-    // 環境情報の付与（134号線走行中かつ西向きなら左手は必ず海）
-    if (this.heading > 180 && this.heading < 300) {
-       environmentInfo = "。現在、車の左側の車窓には「相模湾（海）」が広がっています。夕日が綺麗です。";
+    // 環境情報の付与
+    // 滑川交差点(lat: 35.30928) を基準に、どの道を走っているかを判定する
+    if (this.currentPos) {
+      if (this.currentPos.lat >= 35.3092 && this.heading > 150 && this.heading < 210) {
+        // 滑川交差点より北側 ＆ 南下中（若宮大路）
+        environmentInfo = "。現在、車の正面（前方）に「相模湾（海）」が広がっています。夕日が綺麗です。";
+      } else if (this.currentPos.lat < 35.3100 && this.heading > 180 && this.heading < 300) {
+        // 滑川交差点より南/西側 ＆ 西行中（134号線）
+        environmentInfo = "。現在、車の左側の車窓には「相模湾（海）」が広がっています。夕日が綺麗です。";
+      }
     }
 
     for (const lm of landmarks) {
@@ -217,18 +224,33 @@ export class SimulationEngine {
       }
       
       const distStr = `${Math.round(distance)}m`;
+      const typeStr = lm.type ? `・${lm.type}` : "";
       if (distance <= 250) {
-        visibleItems.push(`【可視(視程内)】${directionStr}${distStr}に「${lm.name}」`);
+        visibleItems.push(`【可視(視程内)${typeStr}】${directionStr}${distStr}に「${lm.name}」`);
       } else if (!isPassed) {
-        approachingItems.push(`【接近中】${directionStr}${distStr}先に「${lm.name}」`);
+        if (lm.type === "店舗" && distance > 700) {
+          continue; // 店舗は700m以内になるまで存在を完全に隠蔽する
+        }
+        approachingItems.push({
+          distance: distance,
+          text: `【接近中${typeStr}】${directionStr}${distStr}先に「${lm.name}」`
+        });
       } else {
-        visibleItems.push(`【通過済み】${directionStr}${distStr}後方に「${lm.name}」`);
+        visibleItems.push(`【通過済み${typeStr}】${directionStr}${distStr}後方に「${lm.name}」`);
       }
     }
     
+    // 【重要】接近中のランドマークは、距離でソートして「最も近い1件」のみを抽出する
+    // これによりLLMが遠方の情報を拾って先回りしてしまう幻覚を物理的に防止する
+    approachingItems.sort((a, b) => a.distance - b.distance);
+    let topApproachingItems = [];
+    if (approachingItems.length > 0) {
+      topApproachingItems.push(approachingItems[0].text);
+    }
+
     let contextStr = " 【リアルタイム周辺状況】: ";
     if (visibleItems.length > 0) contextStr += "視程内(250m以内)で見えるもの: " + visibleItems.join('、') + "。";
-    if (approachingItems.length > 0) contextStr += "これから近づくもの: " + approachingItems.join('、') + "。";
+    if (topApproachingItems.length > 0) contextStr += "これから近づくもの(直近): " + topApproachingItems.join('、') + "。";
     contextStr += environmentInfo;
 
     return contextStr;

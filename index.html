@@ -71,7 +71,16 @@
       <button id="btn-pause" class="btn warning" disabled>中断</button>
       <button id="btn-resume" class="btn success" disabled>再開</button>
       <button id="btn-stop" class="btn danger" disabled>デモ終了</button>
-      <button id="btn-toggle-auto" class="btn secondary">自律発話: ON</button>
+      
+      <div class="toggle-switch-container">
+        <span class="toggle-label">自律発話</span>
+        <span id="toggle-status-off" class="toggle-status-label">OFF</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="btn-toggle-auto" checked>
+          <span class="slider round"></span>
+        </label>
+        <span id="toggle-status-on" class="toggle-status-label on">ON</span>
+      </div>
 
       <div class="voice-status">🎙️ <span id="voice-status-text">待機中</span></div>
     </footer>
