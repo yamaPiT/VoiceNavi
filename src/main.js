@@ -298,11 +298,15 @@ class Application {
       }
 
       // 車両アクション等のUI処理
-      if (responseJSON.action === 'play_music') {
+      const actions = Array.isArray(responseJSON.action) ? responseJSON.action : [responseJSON.action];
+
+      if (actions.includes('play_music')) {
         const musicTitle = responseJSON.music_title || "サザンオールスターズ - 勝手にシンドバッド";
         this.ui.showMusicIndicator(musicTitle);
-      } else if (responseJSON.action === 'circulation_mode') {
-        this.ui.addChatMessage('system', '【車両制御】内気循環モードに変更しました');
+      }
+      
+      if (actions.includes('circulation_mode')) {
+        this.ui.addChatMessage('system', '【車両制御】窓を閉めて内気循環モードに変更しました');
       }
 
       // 自己修復フェーズでの失敗確認

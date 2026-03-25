@@ -7,7 +7,7 @@
 - **フロントエンド**: HTML5 / Vanilla CSS / Vanilla JavaScript (ESModules) + Vite
 - **バックエンド (BFF)**: Node.js / Express
 - **対話AI**: Google Gemini 2.5 Flash（`@google/generative-ai` SDK経由）
-- **音声合成 (TTS)**: Google Cloud Text-to-Speech API（Neural2）
+- **音声合成 (TTS)**: Google Cloud Text-to-Speech API（Chirp3-HD）
 - **音声認識 (STT)**: Web Speech API（ブラウザ標準）
 - **地図**: Google Maps JavaScript API
 

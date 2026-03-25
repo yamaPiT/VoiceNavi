@@ -24,7 +24,14 @@ export const LANDMARKS = [
     id: "yuigahama",
     name: "由比ヶ浜",
     type: "名所",
-    position: { lat: 35.3106, lng: 139.5400 },
+    // 単一の点ではなく、海岸線に沿って複数の座標を定義し、常に車から見て海側（南側）になるよう工夫
+    positions: [
+      { lat: 35.3090, lng: 139.5450 }, // 滑川交差点南
+      { lat: 35.3085, lng: 139.5430 },
+      { lat: 35.3080, lng: 139.5410 },
+      { lat: 35.3075, lng: 139.5390 }
+    ],
+    position: { lat: 35.3080, lng: 139.5410 }, // UIのピン表示用の代表点
     iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
   },
   {
@@ -69,8 +76,8 @@ export const SYSTEM_PROMPT = `
 ユーザー（ドライバー）の発話を受け取り、以下のJSON形式でのみ出力してください。
 {
   "reply_text": "読み上げるテキスト。必ず <speak>タグで囲み、<break time='0.3s'/> や <prosody rate='fast'> 等のSSMLタグを使って感情豊かな発音にすること。",
-  "action": "none | play_music | circulation_mode | show_info",
-  "music_title": "曲名（例：サザンオールスターズ - 真夏の果実）。actionがplay_musicの時のみ必須。",
+  "action": "実行するアクションの配列（例: ['circulation_mode', 'play_music']）。該当なしなら ['none']。利用可能な値: play_music, circulation_mode, show_info",
+  "music_title": "曲名（例：サザンオールスターズ - 真夏の果実）。actionにplay_musicが含まれる時のみ必須。",
   "target_landmark_id": "none | tsurugaoka | yuigahama | goodmellows | inamuragasaki | doubledoors"
 }
 
@@ -89,6 +96,7 @@ export const SYSTEM_PROMPT = `
 - 毎回同じフレーズにならないよう、周辺の地名や歴史、今の気分を交えつつ、案内と同時に自動で音楽を流すような自然なバリエーションで言い切ってください。
 
 システム制約と振る舞い:
+- **最重要**: ユーザーから「煙たい」「臭い」「窓を閉めて」等の車両制御に関する要求があった場合は、必ず action 配列に "circulation_mode" を含めてください。その際、必ず発話テキスト内で「窓を閉めて空気を入れ替えますね」など、操作を行ったことを明確に伝えてください。環境に応じて同時に音楽の提案（"play_music" の併記）も可能です。
 - ユーザー（ショウヘイやマミコ）の意図を汲み取り、柔軟かつ自然に応答してください。
 - ランドマーク「Good Mellows」等、「店舗」についての案内は、以下の例外を除き、自分から積極的に行わないでください。接近中であることを伝えるのも禁止です。
   1. 目的地（ゴール）案内の一部として話す場合。

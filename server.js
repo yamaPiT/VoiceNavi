@@ -147,7 +147,7 @@ app.post('/api/tts', async (req, res) => {
 
     const requestBody = {
       input: isSSML ? { ssml: finalSSML } : { text: text },
-      voice: { languageCode: 'ja-JP', name: 'ja-JP-Neural2-B' },
+      voice: { languageCode: 'ja-JP', name: 'ja-JP-Chirp3-HD-Aoede' },
       audioConfig: { audioEncoding: 'MP3' }
     };
 

@@ -191,19 +191,31 @@ export class SimulationEngine {
     let environmentInfo = "";
 
     // 環境情報の付与
-    // 滑川交差点(lat: 35.30928) を基準に、どの道を走っているかを判定する
+    // 方位角(heading)を用いて海の位置を正確に判定する
     if (this.currentPos) {
-      if (this.currentPos.lat >= 35.3092 && this.heading > 150 && this.heading < 210) {
-        // 滑川交差点より北側 ＆ 南下中（若宮大路）
+      if (this.heading >= 135 && this.heading < 225) {
+        // 南下中（若宮大路など）：海は正面
         environmentInfo = "。現在、車の正面（前方）に「相模湾（海）」が広がっています。夕日が綺麗です。";
-      } else if (this.currentPos.lat < 35.3100 && this.heading > 180 && this.heading < 300) {
-        // 滑川交差点より南/西側 ＆ 西行中（134号線）
-        environmentInfo = "。現在、車の左側の車窓には「相模湾（海）」が広がっています。夕日が綺麗です。";
+      } else if (this.heading >= 225 && this.heading < 315) {
+        // 西行中（134号線など）：海は左手
+        environmentInfo = "。現在、進行方向の大海原として、車の左手の車窓一面に「相模湾（海）」が広がっています。夕日が綺麗です。";
       }
     }
 
     for (const lm of landmarks) {
-      const targetPos = lm.position;
+      // 広がりを持つランドマーク（由比ヶ浜など）の場合は、車から最も近い座標をターゲット位置とする
+      let targetPos = lm.position;
+      if (Array.isArray(lm.positions) && lm.positions.length > 0) {
+        let minDistance = Infinity;
+        for (const pos of lm.positions) {
+          const d = this._calculateDistance(this.currentPos, pos);
+          if (d < minDistance) {
+            minDistance = d;
+            targetPos = pos;
+          }
+        }
+      }
+
       const distance = this._calculateDistance(this.currentPos, targetPos);
       if (distance > 2000) continue; // 2km以上先は無視
 

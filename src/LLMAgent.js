@@ -31,12 +31,16 @@ export class LLMAgent {
 
     while (retries <= maxRetries) {
       try {
+        const dynamicPrompt = this.history.length === 0
+          ? this.systemPrompt + "\n\n【重要】今回は最初の会話です。必ず「ショウヘイさん」と名前を呼んでから会話を始めてください。"
+          : this.systemPrompt + "\n\n【重要】すでに会話は進行中です。以降のすべての発話において「ショウヘイさん」という名前の呼びかけは絶対にしないでください。";
+
         // BFFへのリクエスト
         const bffRequestBody = {
           userText: userText,
           currentContext: currentContext,
           history: this.history,
-          systemPrompt: this.systemPrompt
+          systemPrompt: dynamicPrompt
         };
 
         console.log("[DEBUG LLMAgent] Request Body sent to BFF:", bffRequestBody);
