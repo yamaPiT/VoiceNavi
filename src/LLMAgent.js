@@ -1,6 +1,17 @@
 /**
- * Gemini APIを用いた意図抽出および応答生成モジュール
- * （BFFサーバ経由で非同期通信を行う）
+ * @file LLMAgent.js
+ * @description 【DADAプロセス: 生きた仕様】Gemini APIを用いた意図抽出および応答生成モジュール
+ * 
+ * 役割と責任:
+ * BFFのチャットAPIエンドポイントに対して、ユーザーの発話テキストと SimulationEngine から取得したコンテキスト情報
+ * を付与したプロンプトを送信し、構造化されたJSONレスポンスを取得する。
+ * 
+ * 検証条件 (Acceptance Criteria):
+ * 文字列とコンテキスト情報を入力として呼び出した際、正常なJSONオブジェクト（reply_text, action等のキーを持つ）が返却されること。
+ * 
+ * 異常系（自己修復要件）:
+ * - 429 Too Many Requests エラー受信時には即座にリトライを停止する。
+ * - 3回連続エラーとなった場合は、クラッシュさせずフェーズごとの聞き返し要求（フォールバック応答）を強制生成する。
  */
 export class LLMAgent {
   constructor(apiKey, systemPrompt) {

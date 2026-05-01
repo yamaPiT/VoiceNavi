@@ -1,3 +1,18 @@
+/**
+ * @file server.js
+ * @description 【DADAプロセス: 生きた仕様】バックエンド Express Server (BFF)
+ * 
+ * 役割と責任:
+ * バックエンド(BFF)としてフロントエンドからのリクエストを受け付けるAPI Gateway。
+ * CORSのハンドリングと、安全なサーバーサイド環境でのAPIキー管理・外部API呼び出しを行う。
+ * 
+ * 検証条件 (Acceptance Criteria):
+ * モックされたリクエスト(POST /api/chat, POST /api/tts)に対し、それぞれ適切なJSONや音声バイナリデータがCORSエラーなくクライアントへ返却されること。
+ * 
+ * 異常系（自己修復要件）:
+ * - 各種API呼び出しエラー時には、クライアントへ適切なエラーステータス（429や500等）を伝播させる。
+ */
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';

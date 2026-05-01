@@ -1,3 +1,14 @@
+/**
+ * @file MapModule.js
+ * @description 【DADAプロセス: 生きた仕様】Google Maps APIラッパーモジュール
+ * 
+ * 役割と責任:
+ * Google Maps APIのラッパー。地図の描画、経路（ポリライン）の描画、自車マーカーの移動、
+ * 指定されたランドマークの強調（点滅等）を担当する。
+ * 
+ * 検証条件 (Acceptance Criteria):
+ * 指定された座標データ配列やランドマークIDを与えた際に、Google Mapsの関数（描画、クラス付与等）がエラーなく呼び出されていること。
+ */
 export class MapModule {
   constructor(mapElementId) {
     this.mapElementId = mapElementId;

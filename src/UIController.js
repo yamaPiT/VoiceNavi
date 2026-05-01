@@ -1,5 +1,14 @@
 /**
- * UIのDOM要素管理および更新を行うコントローラークラス
+ * @file UIController.js
+ * @description 【DADAプロセス: 生きた仕様】UIのDOM要素管理および更新を行うコントローラークラス
+ * 
+ * 役割と責任:
+ * 各種ボタン（開始、中断、再開、終了）や画面上の情報表示（速度、テキストログ、音楽再生インジケータ等）を制御する。
+ * 発話例リストクリック等の誤操作防止や状態管理を行う。
+ * 
+ * 検証条件 (Acceptance Criteria):
+ * UIイベント発火時、対応する内部モジュール（SimulationEngine 等）のメソッドが正しく呼ばれること。
+ * 文字列のサニタイズ関数がSSMLタグをすべて除去すること。
  */
 export class UIController {
   constructor() {

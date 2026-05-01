@@ -5,17 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VoiceNavi - Interactive Driving Demo</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="/assets/index-DOEjK1nu.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BM8CUB3v.css">
+  <script type="module" crossorigin src="/assets/index-Bd2p7Vta.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BAxI9rp-.css">
 </head>
 <body>
   <div id="app" class="app-container">
     <!-- Header -->
     <header class="header">
       <h1>VoiceNavi</h1>
-      <div class="speed-indicator">
-        <span id="speed-value">0</span>
-        <span class="unit">km/h</span>
+      <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+        <div id="music-indicator" class="music-indicator hidden">
+          <span class="music-icon">🎵</span>
+          <span id="music-title">音楽再生中...</span>
+        </div>
+        <div class="speed-indicator">
+          <span id="speed-value">0</span>
+          <span class="unit">km/h</span>
+        </div>
       </div>
     </header>
 
@@ -38,29 +44,23 @@
       <!-- Scenario Suggestions Area -->
       <section class="scenario-section">
         <div class="scenario-header">
-          <h3>期待する発話リスト</h3>
+          <h3>ドライバーの発話例</h3>
         </div>
         <div class="scenario-list">
           <div class="scenario-item">
-            <span class="scenario-text">「ここらへんでオススメの場所ある？」</span>
+            <span class="scenario-text">「今どのあたりを走っているの？」</span>
           </div>
           <div class="scenario-item">
-            <span class="scenario-text">「あの左に見える海ってなんていう海？」</span>
+            <span class="scenario-text">「左に何が見える？」</span>
           </div>
           <div class="scenario-item">
-            <span class="scenario-text">「マミコ、海が見えてきたね！」</span>
+            <span class="scenario-text">「サザンをかけて」</span>
           </div>
           <div class="scenario-item">
-            <span class="scenario-text">「湘南っぽい音楽かけて！」</span>
+            <span class="scenario-text">「お腹すいちゃった」</span>
           </div>
           <div class="scenario-item">
-            <span class="scenario-text">「サザンかけて」</span>
-          </div>
-          <div class="scenario-item">
-            <span class="scenario-text">「お腹すいちゃったんだよね」</span>
-          </div>
-          <div class="scenario-item">
-            <span class="scenario-text">「前のトラック煙たくない？」</span>
+            <span class="scenario-text">「前のトラックが煙たい」</span>
           </div>
         </div>
       </section>
@@ -73,10 +73,14 @@
       <button id="btn-resume" class="btn success" disabled>再開</button>
       <button id="btn-stop" class="btn danger" disabled>デモ終了</button>
       
-      <!-- Music Indicator -->
-      <div id="music-indicator" class="music-indicator hidden">
-        <span class="music-icon">🎵</span>
-        <span id="music-title">音楽再生中...</span>
+      <div class="toggle-switch-container">
+        <span class="toggle-label">自律発話</span>
+        <span id="toggle-status-off" class="toggle-status-label">OFF</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="btn-toggle-auto" checked>
+          <span class="slider round"></span>
+        </label>
+        <span id="toggle-status-on" class="toggle-status-label on">ON</span>
       </div>
 
       <div class="voice-status">🎙️ <span id="voice-status-text">待機中</span></div>

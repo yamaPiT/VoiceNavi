@@ -1,3 +1,12 @@
+/**
+ * @file main.js
+ * @description 【DADAプロセス: 生きた仕様】アプリケーションエントリポイント
+ * 
+ * 役割と責任:
+ * VoiceNaviアプリケーションの初期化および全体のオーケストレーション。
+ * 各コンポーネント(UI, Simulation, Map, Voice, LLM)をインスタンス化し、イベントを紐付ける。
+ */
+
 import { UIController } from './UIController.js';
 import { SimulationEngine } from './SimulationEngine.js';
 import { MapModule } from './MapModule.js';

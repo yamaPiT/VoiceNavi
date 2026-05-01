@@ -1,5 +1,10 @@
 /**
- * Directions APIによる経路計算用の地点データ
+ * @file ScenarioData.js
+ * @description 【DADAプロセス: 生きた仕様】経路・地点情報モデルおよびシステムプロンプト定義
+ * 
+ * 役割と責任:
+ * Directions APIによる経路計算用の地点データや、地図上に描画・判定するランドマーク辞書、
+ * LLMに渡すシステムプロンプトの定数などを管理する静的データモデル。
  */
 export const ROUTE_ORIGIN = { lat: 35.318906404151114, lng: 139.55127576885596 }; // 鎌倉駅前
 export const ROUTE_DESTINATION = { lat: 35.30432449943571, lng: 139.51450647136232 }; // 七里ヶ浜海岸駐車場 鎌倉側

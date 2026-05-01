@@ -1,7 +1,16 @@
 import { INTERSECTION_NAMERIKAWA } from './ScenarioData.js';
 
 /**
- * 自動走行の経路・速度計算を担うシミュレーションエンジン
+ * @file SimulationEngine.js
+ * @description 【DADAプロセス: 生きた仕様】自動走行の経路・速度計算、空間コンテキスト算出エンジン
+ * 
+ * 役割と責任:
+ * デモ経路に沿った自車アイコンの移動計算、速度管理、および空間コンテキストの計算を担う。
+ * 進行方向を算出し、周囲のランドマークや海との相対位置関係を計算・出力する。
+ * 
+ * 検証条件 (Acceptance Criteria):
+ * 地図API等に依存せず、座標（Lat/Lng）とTimeDeltaを入力とした純粋なロジックテストにおいて、
+ * 期待通りの「現在の車速」「座標」「算出された相対位置（右/左/前/後）」を一意に出力すること。
  */
 export class SimulationEngine {
   constructor(routePath, onTickCallback) {
