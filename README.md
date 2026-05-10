@@ -32,6 +32,21 @@ AIを動かすための「鍵」を設定します。
    - `VITE_GOOGLE_CLOUD_TTS_API_KEY`: [Google Cloud TTS API](https://console.cloud.google.com/)
    - `VITE_GEMINI_API_KEY`: [Google AI Studio (Gemini API)](https://aistudio.google.com/)
 
+#### 🔑 Gemini APIキーの取得手順
+1.  **[Google AI Studio](https://ai.google.dev/gemini-api/docs/api-key?hl=ja)** にアクセスし、Googleアカウントでログインします。
+2.  左側のメニューにある **「Get API key」** をクリックし、画面中央の **「Create API key」** ボタン（青色）を押します。
+3.  「Search a project」からプロジェクトを選択（初めての場合はデフォルトのままでOK）し、**「Create API key in existing project」** を押すと、長い文字列（APIキー）が表示されます。これをコピーして `.env` に貼り付けてください。
+
+#### 💳 従量課金設定と安全装置の推奨
+無料枠を超える利用や最新モデルの安定利用には従量課金の設定が必要です。モデル毎に無料枠が異なります。新しいモデルほど無料枠が小さい。 `.env` に以下の記述があるので、使用したいモデルを選択してください。
+
+`VITE_GEMINI_MODEL=gemini-3.1-pro-preview   # 3.1 proモデル　無料枠小`
+
+`#VITE_GEMINI_MODEL=gemini-flash-latest    # Flashモデル　無料枠大`
+
+- **[課金設定のガイド](https://ai.google.dev/gemini-api/docs/billing?hl=ja)**
+- **安全装置の設置（強く推奨）**: プログラムのバグによる無限ループなどの不測の事態を防ぐため、Google AI Studio または Google Cloud の管理画面で **「支出上限設定」** や **「予算アラート」** を必ず設定しておきましょう。「◯円を超えたら通知・停止する」設定を行うことで、安心して開発を進められます。
+
 ### 4. 依存ライブラリのインストール
 必要な部品をまとめてダウンロードします。
 ```bash
