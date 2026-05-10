@@ -5,15 +5,12 @@
  * 役割と責任:
  * BFFのチャットAPIエンドポイントに対して、ユーザーの発話テキストと SimulationEngine から取得したコンテキスト情報
  * を付与したプロンプトを送信し、構造化されたJSONレスポンスを取得する。
- * 
- * 検証条件 (Acceptance Criteria):
- * 文字列とコンテキスト情報を入力として呼び出した際、正常なJSONオブジェクト（reply_text, action等のキーを持つ）が返却されること。
- * 
- * 異常系（自己修復要件）:
- * - 429 Too Many Requests エラー受信時には即座にリトライを停止する。
- * - 3回連続エラーとなった場合は、クラッシュさせずフェーズごとの聞き返し要求（フォールバック応答）を強制生成する。
  */
 export class LLMAgent {
+  /**
+   * @param {string} apiKey Gemini APIキー (BFF側で管理されるため、フロントではオプション)
+   * @param {string} systemPrompt システムプロンプト（人格設定）
+   */
   constructor(apiKey, systemPrompt) {
     // APIキーはBFF側で持たせるため、今回はダミーまたは不要
     this.apiKey = apiKey; 

@@ -83,7 +83,7 @@ app.post('/api/chat', async (req, res) => {
       parts: [{ text: promptMessage }]
     });
 
-    const modelName = process.env.VITE_GEMINI_MODEL || "gemini-3.1-flash-lite";
+    const modelName = process.env.VITE_GEMINI_MODEL || "gemini-1.5-flash";
     console.log(`[DEBUG Server] Using model: ${modelName}`);
     console.log("[DEBUG Server] Request contents to Gemini:", JSON.stringify(contents, null, 2));
 

@@ -4,15 +4,11 @@
  * 
  * 役割と責任:
  * 音声認識(STT)によるテキスト取得、およびBFFサーバーを通じた音声合成(TTS)のオーディオ再生を担当する。
- * 
- * 検証条件 (Acceptance Criteria):
- * 文字列（SSML含む）を入力として適切なBFF APIエンドポイントが呼び出されること。
- * ネットワーク切断等の例外時に、Web Speech APIの speechSynthesis フォールバック関数が確実に発火すること。
- * 
- * 異常系（自己修復要件）:
- * - Google Cloud TTS API呼び出しに失敗した場合、ブラウザ標準の Web Speech API の Synthesis にフォールバックし、処理を中断させないこと。
  */
 export class VoiceInteractionModule {
+  /**
+   * @param {string} apiKeyTTS Google Cloud TTS APIキー
+   */
   constructor(apiKeyTTS) {
     this.apiKeyTTS = apiKeyTTS;
     this.recognition = null;

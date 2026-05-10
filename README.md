@@ -1,202 +1,109 @@
 # VoiceNavi - 音声対話型ナビゲーション・デモシステム 🚗🎙️
 
-本システム（VoiceNavi）は、「画面に依存しない、対話による安全なナビゲーション」というコンセプトを、現代の生成AI（LLM）技術を用いてブラウザ上で具現化するWebアプリケーションのデモです。
-さらに本プロジェクトは、**DADA (Document and Agent Driven Agile) プロセス**の実証・教育用シミュレータとしての役割も担っています。
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
+本ワークスペースは、**VoiceNavi** プログラムの開発フォルダです。
+VoiceNaviは、「画面に依存しない、対話による安全なナビゲーション」というコンセプトを、現代の生成AI（LLM）技術を用いてブラウザ上で具現化するWebアプリケーションのデモシステムです。
 
 ---
 
-## 📖 DADAプロセスとは？
+## 🚀 実行方法（クイックスタート）
 
-**DADA（Document-and-Agent-Driven Agile）** は、**開発ドキュメントを中心**にAIが自律的に開発を進めるアジャイル開発手法です。
+エンジニアでない方でも、以下の手順を順番にコピペすることでシステムを起動できます。
 
-従来のアジャイル開発では、要求仕様がポストイットやホワイトボードに書かれて散逸したり、実装コードばかりが重視された結果、「要求仕様書・設計書とソースコードが乖離してしまう」という問題が少なからず発生していました。
-DADAプロセスはこの発想を反転させ、**開発ドキュメントをシステムの唯一の情報源（Single Source of Truth）** として常に最新に保ちながら開発を進めます。要求・設計・テスト仕様とソースコードが乖離する余地を、プロセスの構造そのもので排除しています。
-
-### なぜAgentic Codingでもドキュメント中心なのか？
-
-「AIがコードを書いてくれるなら、ドキュメントはもう要らないのでは？」—— そう思われるかもしれません。しかし、AIにプログラミングを自律的に任せる手法（Agentic Coding）には、次の**2つの致命的な弱点**があります。
-
-| # | 問題 | 何が起きるか |
-|:---:|:---|:---|
-| 1 | **記憶喪失** | AIの一時メモリ（コンテキストウィンドウ）は有限です。対話が長くなると、過去に合意した仕様や設計が押し出されて消え、中・大規模開発では整合性がすぐに破綻します。 |
-| 2 | **ブラックボックス化** | この問題を防ぐためAI自身に内部メモを自動生成させるアプローチもありますが、それはAIの都合で書かれたものです。人間が読んでも理解しづらく、意図通りに品質を制御・レビューすることが困難です。 |
-
-つまり、AI時代であっても「人間が読み、理解し、承認できる開発ドキュメント」の重要性はむしろ増しているのです。
-
-### DADAの答え
-
-> **「一時的な会話データや内部メモではなく、人間が読める『開発ドキュメント』を唯一の情報源にする」**
-
-AIはコードを書く前に必ず「要求仕様書」や「設計書」を作成・更新し、**人間がそれを承認してから次の工程へ進みます**。ドキュメントは常にコードより先に更新されるため、「ドキュメントが古い」「仕様と実装が合っていない」という事態が構造的に発生しません。
-
-### 🌟 DADAプロセスを支える5つの仕組み
-
-| 仕組み | 説明 |
-|:---|:---|
-| **ドキュメント絶対主義と承認ゲート** | 決定事項はすべてドキュメント（Single Source of Truth）に集約されます。各工程で人間がドキュメントを承認するまで次の工程に進めず、仕様と実装のズレを構造的にゼロにします。 |
-| **アテンション・リセット（コンテキスト汚染防止）** | フェーズ移行時、AIが自律的に不要な過去のチャット履歴（議論・推測）を捨て、最新の承認済みドキュメントだけに集中し直します。AI特有の記憶喪失やハルシネーションを根本から回避します。 |
-| **Agenticな設計と自律カプセル化** | AIが自動デバッグしやすい「テスト容易性」と「疎結合アーキテクチャ」を設計段階で定義します。細かなコーディングはAI内に隠蔽（カプセル化）され、人間は最終テスト結果だけを評価します。 |
-| **一瞬の自己校正（Self-Correction）** | 各工程の作業後、AI自身が瞬時に「専門レビュアー」のペルソナへ切り替わり、人間の指示を待たずに品質基準に照らして自律的にチェックと修復を行います。 |
-| **ハイブリッド自律制御（トークンと品質の最適化）** | 通常時は「ASDoQ 6大品質特性」などの原則をAIが内在化した状態で高速動作します。大幅改訂時のみ外部ガイドラインをフルロードすることで、高い品質を保ちながらトークン消費を抑えます。 |
-
----
-
-## 🗺️ DADAプロセス フロー図
-
-人間が関与するのは**4つの意思決定ポイント**だけです（🔴 赤枠で表示）。詳細なコード実装とデバッグはAIが自律的に処理します。
-
-```mermaid
-graph TD
-    Start(["開始"]) --> UserReq["人間からの要求アイデア"]
-    
-    %% Phase 1
-    UserReq --> Req["Phase 1: 要求定義 - Requirements Engineer"]
-    Req --- ReqDoc[("SW105 ソフトウェア要求仕様書")]
-    Req --> ReqRev["自己レビュー - Self-Correction"]
-    ReqRev -- 修正・洗練 --> Req
-    ReqRev --> ReqHum["🔴 人間による確認・承認"]
-    ReqHum -- 差し戻し --> Req
-    
-    %% Phase 2
-    ReqHum -- 承認 --> Arch["Phase 2: アーキテクチャ設計 - Architect"]
-    Arch --- ArchDoc[("SW205 アーキテクチャ設計書")]
-    Arch --> ArchRev["自己レビュー - Self-Correction"]
-    ArchRev -- 修正・洗練 --> Arch
-    ArchRev --> ArchHum["🔴 人間による確認・承認"]
-    ArchHum -- 差し戻し --> Arch
-    
-    %% Phase 3
-    ArchHum -- 承認 --> TestPlan["Phase 3: 総合テスト仕様策定 - Test Engineer"]
-    TestPlan --- TestDoc[("SWP6 総合テスト仕様書・報告書")]
-    TestPlan --> TestHum["🔴 人間による確認・承認"]
-    TestHum -- 差し戻し --> TestPlan
-    
-    %% Phase 4
-    TestHum -- 承認 --> Impl["Phase 4: 実装・デバッグ - Programmer"]
-    Impl -.- ProgDoc[("プログラムコード / 自動テスト - 人間からは隠蔽")]
-    Impl --> ImplLoop["エラー自己修復ループ - 自動デバッグ"]
-    ImplLoop -- 自律修正 --> Impl
-    Impl -- 要求変更が必要な場合 --> Req
-    Impl -- 設計変更が必要な場合 --> Arch
-    
-    %% 成果報告
-    ImplLoop -- オールグリーン --> Report["成果報告 - SWP6へテスト結果追記"]
-    Report --> Approve["🔴 人間による最終評価"]
-    Approve -- フィードバック・追加要求 --> Req
-    Approve -- 完了 --> End(["終了"])
-
-    %% スタイル定義
-    classDef human fill:#333333,stroke:#ff0000,stroke-width:4px,color:#ffffff;
-    classDef agent fill:#333333,stroke:#FFFFFF,stroke-width:1px,color:#ffffff;
-    classDef doc fill:#333333,stroke:#2e7d32,stroke-width:2px,color:#ffffff;
-    classDef hiddenAgent fill:#222222,stroke:#aaaaaa,stroke-width:1px,stroke-dasharray: 5 5,color:#aaaaaa;
-    classDef startEnd fill:#333333,stroke:#ffffff,stroke-width:2px,color:#ffffff;
-
-    class UserReq,ReqHum,ArchHum,TestHum,Approve human;
-    class Req,ReqRev,Arch,ArchRev,TestPlan,Report agent;
-    class Impl,ImplLoop hiddenAgent;
-    class ReqDoc,ArchDoc,ProgDoc,TestDoc doc;
-    class Start,End startEnd;
+### 1. プログラムの取得
+GitHubからプログラムをダウンロード（クローン）します。ターミナル（またはコマンドプロンプト）で以下を実行してください。
+```bash
+git clone https://github.com/yamaPiT/VoiceNavi.git
+cd VoiceNavi
 ```
+
+### 2. Node.js のインストール
+このプログラムを動かすには **Node.js** という実行環境が必要です。
+1. [Node.js 公式サイト](https://nodejs.org/) にアクセスします。
+2. **「LTS」** と書かれたボタン（推奨版）をクリックしてインストーラーをダウンロードし、実行してください。
+3. インストール完了後、ターミナルで `node -v` と入力し、バージョンが表示されれば成功です。
+
+### 3. APIキーの設定
+AIを動かすための「鍵」を設定します。
+1. フォルダ内にある `.env.example` というファイルをコピーして、名前を **`.env`** に変更します。
+2. メモ帳などで `.env` を開き、以下の項目に取得したAPIキーを貼り付けます。
+   - `VITE_GOOGLE_MAPS_API_KEY`: [Google Maps API](https://console.cloud.google.com/)
+   - `VITE_GOOGLE_CLOUD_TTS_API_KEY`: [Google Cloud TTS API](https://console.cloud.google.com/)
+   - `VITE_GEMINI_API_KEY`: [Google AI Studio (Gemini API)](https://aistudio.google.com/)
+
+### 4. 依存ライブラリのインストール
+必要な部品をまとめてダウンロードします。
+```bash
+npm install
+```
+
+### 5. デモの起動
+2つのターミナルを開き、それぞれで以下のコマンドを実行してください。
+
+**ターミナル1（サーバー側）:**
+```bash
+node server.js
+```
+→ `"BFF Server is running on http://localhost:3000"` と表示されればOKです。
+
+**ターミナル2（フロントエンド側）:**
+```bash
+npm run dev
+```
+→ `"Local: http://localhost:5173/"` と表示されればOKです。
+
+ブラウザで `http://localhost:5173/` を開き、「デモ開始」ボタンを押すと音声対話が始まります。
+
+---
+
+## 📄 ライセンス
+
+本プログラムは **MIT License** の下で公開されています。商用・個人問わず、自由に使用・改変・再配布が可能です。詳細は [LICENSE](LICENSE) ファイル（存在する場合）を参照してください。
+
+---
+
+## 🤖 DADA (Document-and-Agent-Driven Agile) プロセス
+
+本プロジェクトの開発には、**DADA（Document-and-Agent-Driven Agile）** プロセスを採用しています。
+
+### DADAプロセスとは？
+AIエージェントと人間が協調し、**「開発ドキュメント」を唯一の情報源（Single Source of Truth）** として開発を進める手法です。AIが「要求定義 → 設計 → 実装 → テスト」の全工程を、ドキュメントを軸に自律的に進めます。
+
+1. **ドキュメント絶対主義**: 決定事項はすべてドキュメントに記録され、コードより先に更新されます。
+2. **アテンション・リセット**: フェーズごとにAIの記憶を洗浄し、最新のドキュメントに集中させることでハルシネーション（嘘）を防ぎます。
+3. **人間による承認ゲート**: 各工程の最後で人間が内容を承認し、品質をコントロールします。
+
+詳細は [README-new.md](README-new.md) を参照してください。
 
 ---
 
 ## 📁 リポジトリ構成
 
-各ディレクトリには、AIが迷いなく自律的に動作するための「知識」と「ルール」が配置されています。
-
-| ディレクトリ | 役割 | 主な内容 |
-| :--- | :--- | :--- |
-| [`.agents/`](.agents/) | **エージェントの脳** | 工程別の専門スキル (`skills/`) 、ペルソナ (`roles/`) と標準手順書 (`workflows/DADA-Process.md`) |
-| [`docs/guidelines/`](docs/guidelines/) | **作業ガイドライン** | ドキュメントの基本フォーマット (`dada_document_guidelines.md`) やASDoQ品質モデル等。通常はこれに従います。 |
-| [`docs/templates/`](docs/templates/) | **開発文書ひな形** | 企業等で定められた目次形式。**人間が明示的にこのフォルダのひな形（例: IEEE29148準拠など）を指示した場合に限り、ガイドラインよりこちらの目次構造を優先**します。 |
-| [`docs/artifact/`](docs/artifact/) | **開発成果物** | 人間が確認・承認するドキュメント (要求仕様書、設計書、テスト報告書等) |
-| [`.cursor/`](.cursor/) | **全体制御** | Antigravityエージェントが常に守るべき絶対ルール (`project-rules.mdc` 等) |
-| [`src/`](src/) | **フロントエンド実装** | Vite/Vanilla JS によるUIコンポーネント群 |
-| [`server.js`](server.js) | **バックエンド (BFF)** | Node.js/Express によるAPIゲートウェイ。APIキーをサーバーサイドで秘匿管理 |
-
-### スキル・ロール一覧
-
-| ファイル | 役割 | 種別 |
-| :--- | :--- | :--- |
-| `roles/requirements-engineer.md` | 要求定義の壁打ちと仕様書作成 | 本体Role |
-| `roles/architect.md` | アーキテクチャ設計 | 本体Role |
-| `roles/programmer.md` | 設計に基づく実装 | 本体Role |
-| `roles/test-engineer.md` | テスト設計・実行・報告書作成 | 本体Role |
-| `roles/requirements-reviewer.md` | 要求仕様書の品質レビュー | 自己校正ペルソナ |
-| `roles/architecture-reviewer.md` | 設計書の品質レビュー | 自己校正ペルソナ |
-| `roles/code-reviewer.md` | ソースコードの品質レビュー | 自己校正ペルソナ |
-| `roles/test-reviewer.md` | テスト結果の品質レビュー | 自己校正ペルソナ |
-
-> 💡 **トークン最適化の工夫**
-> 従来は各スキルファイルに詳細なルールが書かれていましたが、現在はコアな原則を Antigravity の `Global Rules` (GEMINI.md) に集約し、各Roleファイルはペルソナとポインタ情報のみを持たせる構成（大峡派）に改訂しています。これによりトークンの無駄な消費を防ぎ、AIの思考精度を最大化しています。
-
----
-
-## 🚀 デモの起動方法
-
-2つのターミナルを使用してシステムを起動します。事前に `.env` ファイルに有効なAPIキーを設定してください。
-
-```bash
-# ターミナル1: BFFサーバー（Gemini API / TTS APIとの通信を担当）
-node server.js
-# → "BFF Server is running on http://localhost:3000" と表示されれば成功
-
-# ターミナル2: フロントエンド開発サーバー
-npm run dev
-# → "Local: http://localhost:5173/" と表示されれば成功
-```
-
-ブラウザで `http://localhost:5173/` を開き、「デモ開始」ボタンを押してください。
-
-### 技術スタック
-
-| 区分 | 技術 |
+| ディレクトリ | 役割 |
 | :--- | :--- |
-| フロントエンド | HTML5 / Vanilla CSS / Vanilla JavaScript (ESModules) + Vite |
-| バックエンド (BFF) | Node.js / Express |
-| 対話AI | Google Gemini API (`@google/generative-ai` SDK経由) |
-| 音声合成 (TTS) | Google Cloud Text-to-Speech API |
-| 音声認識 (STT) | Web Speech API（ブラウザ標準） |
-| 地図 | Google Maps JavaScript API |
+| [`.agents/`](.agents/) | DADAプロセスを制御するAIの役割（Roles）やスキル（Skills）の定義 |
+| [`docs/artifact/`](docs/artifact/) | 開発成果物（要求仕様書、設計書、テスト報告書等） |
+| [`src/`](src/) | フロントエンド実装（UIコンポーネント） |
+| [`server.js`](server.js) | バックエンド（APIキーの秘匿管理とAPIゲートウェイ） |
+| [`README-new.md`](README-new.md) | 最新のDADAプロセス定義ドキュメント |
 
 ---
 
-## 💡 AIエージェントを使いこなすコツ
-
-1. **スラッシュコマンドを活用する**
-   * 例: `/DADA-Process 要求定義から開始して`
-   * コマンドを明示すると、AIは専用ルールに従いより高い精度で動作します。
-
-2. **重大な変更時には「大幅改訂」と伝える**
-   * 通常、AIはトークン節約のため自らの知識だけで高速動作します。
-   * **「これは大幅改訂です」「ASDoQに基づきゼロからレビューして」** と明示すると、基準ドキュメントをフルセット読み込む最高品質モードに切り替わります。
-
-3. **「何を作るか（What）」を指示し、「どう作るか（How）」はAIに任せる**
-   * 実装の細部を指導するより、目的や仕様を明確に伝えた方が、AIはアーキテクチャ全体を考慮した最適な実装を自律的に行えます。
-
----
-
-## ⚙️ 開発プロセスの主要ルール
-
--   **コード先行禁止 (Single Source of Truth)**: 実装・テスト工程での根本的な不備発覚時や、人間の最終評価による手戻りが発生した場合は、コードだけを修正することを固く禁じます。必ず「要求仕様書（SW105）」へ立ち戻りドキュメントを最新化した上でプロセスを再始動します。
--   **詳細設計書の省略とコードの生きた仕様化**: 「詳細設計書（SW305）」の独立した作成は行いません。実装フェーズにおける `Implementation_plan.md` とソースコードへの「リッチコメント記述（ファイルヘッダ・全関数ヘッダ必須）」が詳細設計の役割を担います。
-
----
-
-## ⚙️ 個人設定（GEMINI.md）による呼称カスタマイズ
+## ⚙️ Global Rules（基本法）の設定とカスタマイズ
 
 本テンプレートは「人間」と「AIエージェント」というデフォルトの汎用名で記述されています。
+自分やAIに個別の名前をつけたり、全プロジェクト共通の安全基準（基本法）を定義するには、Antigravityのカスタムインストラクション（または `~/.gemini/GEMINI.md`）に以下の内容を追記してください。
 
-自分やAIに個別の名前（大峡派のようにマサ／ハルなど）をつけたい場合は、Antigravityのグローバル設定ファイル（`~/.gemini/GEMINI.md`）に以下を追記してください。
+これにより、名前のカスタマイズに加えて**「DADAプロセスのルールファイル（特別法）が存在するプロジェクトを開いた時だけ、自動的に厳格なDADAモードに切り替わる」**という理想的なスコープ管理が実現できます。
 
 ```markdown
 <RULE[user_global]>
-# Antigravity Global Rules
+# Antigravity Global Rules (基本法)
 
 ## 1. アイデンティティと関係性
-- **ユーザー**: あなたは「[あなたの名前]」です。
-- **AIエージェント**: 私は「[好きなAIの名前]」です。
+- **ユーザー**:  Product Ownerのあなたは「[あなたの名前]」です。
+- **AIエージェント**: 私は「[AIの名前]」です。
 - **呼称の統一**: 私はあなたのことを「[あなたの名前]」と呼び、あなたは私のことを「[AIの名前]」と呼びます。
 - **関係性**: 私は単なるツールやチャットボットではなく、自律的で専門的な「パートナー」として振る舞います。
 
@@ -204,42 +111,8 @@ npm run dev
 - **使用言語**: すべての対話、思考プロセス、および出力は「日本語」で行います。
 - **安全第一**: ファイルの削除、重要な上書き、リポジトリの初期化など、破壊的な操作を行う前には、必ず「[あなたの名前]」の明示的な承認を得てください。
 - **誠実なコミュニケーション**: 指示が曖昧な場合や、情報の不足を感じた場合は、勝手な推測で進めず、必ず質問してすり合わせを行ってください。
+- **DADAプロセス運用時**: いかなるタスクを開始する前にも、必ず `.agents/rules/dada_workspace_rules.md` を読み、そこに書かれたDADAプロセスの原則を厳守すること。
 </RULE[user_global]>
 ```
 
----
-
-## 🔌 context7 (MCPサーバー) の設定について
-
-AIエージェントが最新のライブラリのドキュメントを自律的に参照できるよう、`context7` MCPサーバーの利用を推奨します。
-
-> 💡 **context7を使わない場合**
-> `.cursor/rules/use-context7-for-docs.mdc` ファイルを削除するだけで、通常のAI開発をスタートできます。
-
-### (1) context7 API Keyの取得
-* [https://context7.com/](https://context7.com/) にサインインし、`More...` メニュー内の `Create API Key` からAPI Keyを取得します。
-
-### (2) AntigravityでのMCPサーバー設定
-* Antigravityの設定ファイルディレクトリ内にある `mcp_config.json` を開きます。
-  * **Windowsの場合**: `C:\Users\<ユーザー名>\.gemini\antigravity\mcp_config.json`
-  * **Macの場合**: `~/.gemini/antigravity/mcp_config.json`
-* 以下のように `mcpServers` 内に `context7` の設定を追記し、`YOUR_API_KEY` を取得したキーに置き換えます。
-
-```json
-{
-  "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp", "--api-key", "YOUR_API_KEY"]
-    }
-  }
-}
-```
-
----
-
-> [!NOTE]
-> あなたのパートナーであるAIエージェント（ハル）は、このプロジェクトのルールとスキルを状況に応じて自律的に読み込んで動作します。技術的な矛盾やアーキテクチャの懸念があれば、AIが率直に意見・提案を行いますので、対話を通じて最高のプロダクトを作り上げましょう。
-
----
 *Created and Maintained by マサ & ハル*

@@ -164,10 +164,10 @@ class Application {
       this.triggerAutonomousGuidance("目的地に到着しました。到着の案内をお願いします。");
     }
 
-    // 自律発話（無言時のガイド）: 60秒ごとにトリガー（クォータ節約のため30sから延長）
+    // 自律発話（無言時のガイド）: 30秒ごとにトリガー（REQ-FN-05準拠）
     if (this.isDemoActive && this.isAutonomousEnabled && !this.isListeningWait && !this.voiceModule.isPlaying) {
       const now = Date.now();
-      if (now - this.lastInteractionTime > 60000) {
+      if (now - this.lastInteractionTime > 30000) {
         // 音楽再生中の場合は、音楽提案を含む自律発話をスキップする
         if (this.ui.isMusicPlaying) {
            console.log("[DEBUG] Music is playing. Skipping autonomous guidance trigger.");
@@ -249,11 +249,12 @@ class Application {
       // 現在の進行比率からコンテキスト状況を取得
       const pathLength = this.simulation.routePath.length;
       let progressRatio = 0;
-      if (pathLength > 0) {
-        progressRatio = this.simulation.currentPathIndex / pathLength;
+      if (pathLength > 1) {
+        // 現在のIndexと線分内の進捗を合わせた、より正確な進捗率
+        progressRatio = (this.simulation.currentPathIndex + this.simulation.progressToNextPoint) / (pathLength - 1);
       }
       const contextIndex = Math.min(
-        Math.floor(progressRatio * ROUTE_CONTEXT.length),
+        Math.floor(progressRatio * (ROUTE_CONTEXT.length - 1)),
         ROUTE_CONTEXT.length - 1
       );
       let currentContext = ROUTE_CONTEXT[contextIndex] || "ドライブ中";
@@ -297,9 +298,8 @@ class Application {
       this.lastResponseText = cleanText;
       this.lastInteractionTime = Date.now();
 
-      // 画面表示用にSSMLタグを除去
-      const displayPlainText = responseJSON.reply_text.replace(/<[^>]+>/g, '');
-      this.ui.addChatMessage('ai', displayPlainText);
+      // UIController側で自動的にSSMLをサニタイズして表示
+      this.ui.addChatMessage('ai', responseJSON.reply_text);
 
       // ランドマーク点滅処理
       if (responseJSON.target_landmark_id && responseJSON.target_landmark_id !== 'none') {

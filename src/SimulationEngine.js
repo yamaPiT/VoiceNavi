@@ -13,6 +13,10 @@ import { INTERSECTION_NAMERIKAWA } from './ScenarioData.js';
  * 期待通りの「現在の車速」「座標」「算出された相対位置（右/左/前/後）」を一意に出力すること。
  */
 export class SimulationEngine {
+  /**
+   * @param {Array<{lat: number, lng: number}>} routePath 走行経路の座標配列
+   * @param {Function} onTickCallback 毎フレーム更新時に呼び出されるコールバック
+   */
   constructor(routePath, onTickCallback) {
     this.routePath = routePath || [];
     this.onTick = onTickCallback;
@@ -176,7 +180,10 @@ export class SimulationEngine {
   }
 
   /**
-   * 2点間の距離(m)を計算する
+   * 2点間の距離(m)をハバーサイン公式（Haversine formula）を用いて正確に計算する
+   * @param {Object} p1 {lat, lng}
+   * @param {Object} p2 {lat, lng}
+   * @returns {number} 距離(m)
    */
   _calculateDistance(p1, p2) {
     const R = 6371000; // 地球半径(m)

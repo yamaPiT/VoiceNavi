@@ -28,6 +28,17 @@ export class UIController {
   }
 
   /**
+   * SSMLタグを文字列から除去し、プレーンテキストにする
+   * @param {string} text 
+   * @returns {string}
+   */
+  sanitizeSSML(text) {
+    if (!text) return "";
+    // <speak>, <break>, <prosody> 等のタグを正規表現で除去
+    return text.replace(/<[^>]+>/g, '').trim();
+  }
+
+  /**
    * 速度表示を更新する
    * @param {number} speed km/h
    */
@@ -57,7 +68,11 @@ export class UIController {
 
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
-    bubble.textContent = text;
+    
+    // AIのメッセージの場合はSSMLをサニタイズする
+    const displayText = (speaker === 'ai') ? this.sanitizeSSML(text) : text;
+    bubble.textContent = displayText;
+    
     msgDiv.appendChild(bubble);
 
     this.chatLogEl.appendChild(msgDiv);
