@@ -87,25 +87,34 @@ app.post('/api/chat', async (req, res) => {
     console.log(`[DEBUG Server] Using model: ${modelName}`);
     console.log("[DEBUG Server] Request contents to Gemini:", JSON.stringify(contents, null, 2));
 
-    const genAI = new GoogleGenerativeAI(API_KEY);
+    // SDKのAPIキー判定バグ（AQ.Ab形式の新しいキーをOAuthアクセストークンと誤認する挙動）を回避するため、
+    // 直接fetchを用いてクエリパラメータにkeyを載せてリクエストを送信します。
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
     const generationConfig = {
       temperature: 0.7,
     };
-
-    // Gemmaモデルは現在 JSON mode (responseMimeType) をサポートしていないため、
-    // geminiを含むモデルの場合のみ設定を有効化する
     if (modelName.toLowerCase().includes("gemini")) {
       generationConfig.responseMimeType = "application/json";
     }
 
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      generationConfig
+    const apiResponse = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: contents,
+        generationConfig: generationConfig
+      })
     });
 
-    const result = await model.generateContent({ contents });
-    const response = result.response;
-    const rawText = response.text();
+    if (!apiResponse.ok) {
+      const errText = await apiResponse.text();
+      throw new Error(`Gemini API Error (${apiResponse.status}): ${errText}`);
+    }
+
+    const apiData = await apiResponse.json();
+    const rawText = apiData.candidates?.[0]?.content?.parts?.[0]?.text;
     console.log("[DEBUG Server] Gemini Raw Response TEXT:", rawText);
 
     if (!rawText) {
